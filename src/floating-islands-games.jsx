@@ -695,6 +695,27 @@ const FloatingIslandsGames = () => {
     <>
       {/* CSS Animations */}
       <style>{`
+        /* Font Imports - Replace with your downloaded fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800&display=swap');
+        
+        /* Font Families */
+        :root {
+          /* ShowPop substitute: Righteous (similar bold display font) */
+          --font-display: 'Righteous', 'ShowPop', sans-serif;
+          /* Roundex substitute: Nunito (similar rounded font) */
+          --font-body: 'Nunito', 'Roundex', sans-serif;
+        }
+        
+        /* Title/Display Font */
+        .font-display {
+          font-family: var(--font-display);
+        }
+        
+        /* UI/Body Font */
+        .font-body {
+          font-family: var(--font-body);
+        }
+        
         @keyframes float {
           0%, 100% {
             transform: translate(-50%, -50%) translateY(0px);
@@ -758,14 +779,14 @@ const FloatingIslandsGames = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-white">Cloud Bound Gaming</h1>
+              <h1 className="text-3xl font-bold text-white font-display tracking-wide">Cloud Bound Gaming</h1>
             </div>
             
             <div className="flex items-center gap-2">
               {/* Archive Button */}
               <button
                 onClick={() => setShowArchive(true)}
-                className="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors font-semibold text-sm btn-press"
+                className="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors font-semibold text-sm btn-press font-body"
               >
                 Archive
               </button>
@@ -773,7 +794,7 @@ const FloatingIslandsGames = () => {
               {/* Submit Game Button - Golden CTA */}
               <button
                 onClick={() => setShowSubmissionForm(true)}
-                className="text-white px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 transition-all font-semibold text-sm btn-press shadow-lg"
+                className="text-white px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 transition-all font-semibold text-sm btn-press shadow-lg font-body"
               >
                 Submit Game
               </button>
@@ -917,7 +938,7 @@ const FloatingIslandsGames = () => {
             </button>
           </div>
 
-          <p className="text-white/70 text-xs mt-2 text-center">
+          <p className="text-white/70 text-xs mt-2 text-center font-body">
             {isGridMode ? (
               <>Grid View: {sortedIslands.length} games • Click "Reset Stream" to return</>
             ) : (
@@ -1029,9 +1050,9 @@ const FloatingIslandsGames = () => {
                     
                     {/* Island details */}
                     <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-white/95 rounded-lg px-4 py-2 shadow-lg w-44 text-center border-2 border-yellow-600">
-                      <h3 className="font-bold text-gray-800 text-sm truncate">{island.title}</h3>
-                      <p className="text-xs text-gray-600">{island.creator}</p>
-                      <p className="text-xs text-sky-600 font-semibold mt-1">
+                      <h3 className="font-bold text-gray-800 text-sm truncate font-body">{island.title}</h3>
+                      <p className="text-xs text-gray-600 font-body">{island.creator}</p>
+                      <p className="text-xs text-sky-600 font-semibold mt-1 font-body">
                         {island.transitDays} day journey
                       </p>
                     </div>
