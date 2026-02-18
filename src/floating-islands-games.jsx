@@ -758,12 +758,7 @@ const FloatingIslandsGames = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-white">Island Salvage</h1>
-              {isConnected ? (
-                <Wifi className="text-green-400" size={20} />
-              ) : (
-                <WifiOff className="text-red-400" size={20} />
-              )}
+              <h1 className="text-3xl font-bold text-white">Cloud Bound Gaming</h1>
             </div>
             
             <div className="flex items-center gap-2">
@@ -775,10 +770,10 @@ const FloatingIslandsGames = () => {
                 Archive
               </button>
               
-              {/* Submit Game Button */}
+              {/* Submit Game Button - Golden CTA */}
               <button
                 onClick={() => setShowSubmissionForm(true)}
-                className="text-white/90 hover:text-white px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm btn-press"
+                className="text-white px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 transition-all font-semibold text-sm btn-press shadow-lg"
               >
                 Submit Game
               </button>
@@ -924,9 +919,9 @@ const FloatingIslandsGames = () => {
 
           <p className="text-white/70 text-xs mt-2 text-center">
             {isGridMode ? (
-              <>Grid View: {sortedIslands.length} islands • Click "Reset Stream" to return</>
+              <>Grid View: {sortedIslands.length} games • Click "Reset Stream" to return</>
             ) : (
-              <>Swipe or scroll vertically to explore more islands • {sortedIslands.length} islands floating</>
+              <>Discover games as they drift through the clouds • {sortedIslands.length} games floating</>
             )}
           </p>
         </div>
@@ -1051,16 +1046,16 @@ const FloatingIslandsGames = () => {
         {sortedIslands.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center max-w-md px-6">
-              <div className="text-6xl mb-4">🏝️</div>
+              <div className="text-6xl mb-4">☁️</div>
               <p className="text-sky-700 text-2xl font-bold mb-2">
-                {searchQuery ? 'No islands match your search' : 
+                {searchQuery ? 'No games match your search' : 
                  isGridMode && filterGenre !== 'all' ? `No ${filterGenre} games found` :
-                 'No islands floating by'}
+                 'No games drifting by'}
               </p>
               <p className="text-sky-600 mb-4">
                 {searchQuery ? `We couldn't find any games matching "${searchQuery}"` :
                  isGridMode && filterGenre !== 'all' ? `Try selecting a different genre or view all games` :
-                 'Islands will appear as they drift into view'}
+                 'Games will appear as they drift through the clouds'}
               </p>
               {(searchQuery || isGridMode) && (
                 <div className="flex gap-3 justify-center">
@@ -1077,7 +1072,7 @@ const FloatingIslandsGames = () => {
                       onClick={resetToStreaming}
                       className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors"
                     >
-                      View All Islands
+                      View All Games
                     </button>
                   )}
                 </div>
@@ -1270,7 +1265,7 @@ const FloatingIslandsGames = () => {
                   {selectedGame.tags.map((tag, index) => (
                     <span 
                       key={index}
-                      className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-sm"
+                      className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       {tag}
                     </span>
@@ -1288,7 +1283,7 @@ const FloatingIslandsGames = () => {
                   href={selectedGame.gameUrl || '#'} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg transition-colors text-center"
+                  className="flex-1 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white font-bold py-3 rounded-lg transition-all text-center"
                 >
                   Play Game →
                 </a>
@@ -1325,8 +1320,8 @@ const FloatingIslandsGames = () => {
         </button>
       )}
 
-      {/* Admin Panel with Controls - Much Higher Above Bottom Bar */}
-      {showAdminPanel ? (
+      {/* Admin Panel with Controls - Hidden in production, enable in dev only */}
+      {false && showAdminPanel ? (
         <div className="fixed bottom-56 left-6 bg-white/95 backdrop-blur-md rounded-xl p-4 shadow-2xl border-2 border-purple-300 z-40 w-72">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1581,7 +1576,7 @@ const FloatingIslandsGames = () => {
       )}
 
       {/* Bottom Game List - Full Width Bar with Horizontal Scrolling */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-sky-900/95 to-sky-800/95 backdrop-blur-md border-t-2 border-sky-700 z-30 shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-sky-900/95 via-indigo-800/95 to-sky-800/90 backdrop-blur-md border-t-2 border-sky-700 z-30 shadow-2xl">
         <div className="max-w-full px-4 py-2">
           <div className="flex items-center justify-between mb-2">
             <div>
