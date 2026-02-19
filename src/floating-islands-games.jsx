@@ -14,9 +14,8 @@ class MockFirebaseClient {
     this.listeners = [];
     this.connected = true;
     
-    // FORCE REGENERATE - Clear old slow data
-    // Commented out for testing - uncomment only when changing data structure
-    // localStorage.removeItem('islandData');
+    // FORCE REGENERATE - Clear old game distribution (5-85% spread)
+    localStorage.removeItem('islandData');
     
     // Simulate initial data load
     setTimeout(() => {
@@ -47,7 +46,7 @@ class MockFirebaseClient {
         ...game,
         spawnTime, // Server timestamp when island entered the stream
         transitTime,
-        yOffset: Math.random() * 80 + 10 // Spread across full height (10-90%)
+        yOffset: Math.random() * 80 + 5 // Spread from 5% to 85% (closer to header)
       };
     });
   }
@@ -76,7 +75,7 @@ class MockFirebaseClient {
       id: Date.now(), // Generate unique ID
       spawnTime: Date.now(),
       transitTime,
-      yOffset: Math.random() * 80 + 10 // Spread across full height (10-90%)
+      yOffset: Math.random() * 80 + 5 // Spread from 5% to 85% (closer to header)
     };
     
     this.data.push(newIsland);
@@ -609,43 +608,33 @@ const FloatingIslandsGames = () => {
   // Zoom to island - centers it in VISIBLE area (between header and footer) and pops it
   const zoomToIsland = (island) => {
     const screenHeight = window.innerHeight;
-    
-    // The games don't fill the whole screen - they're distributed across a smaller vertical range
-    // So we need to center based on where games actually appear, not the full screen height
     const headerHeight = 110;
     const footerHeight = 180;
     
-    // Calculate visible area center
+    // Games spawn between 5-85% of screen height
+    // We want to center them in the VISIBLE area (between header and footer)
     const visibleAreaHeight = screenHeight - headerHeight - footerHeight;
     const visibleCenterY = headerHeight + (visibleAreaHeight / 2);
     
-    // Island's Y position (this is where it actually is on screen)
+    // Island's actual Y position on screen
     const islandY = (island.yOffset / 100) * screenHeight;
     
-    // Calculate shift: we want to move the island TO the visible center
-    // Current island position + viewportOffset = where we want it
-    // So: islandY + newOffset = visibleCenterY
-    // Therefore: newOffset = visibleCenterY - islandY
+    // How much to shift to center it
     const shiftNeeded = visibleCenterY - islandY;
     
     console.log('=== ZOOM TO ISLAND ===');
-    console.log('Island ID:', island.id);
-    console.log('Island Title:', island.title);
-    console.log('Island yOffset:', island.yOffset);
-    console.log('Screen Height:', screenHeight);
-    console.log('Visible Center Y:', visibleCenterY);
-    console.log('Island Y:', islandY);
-    console.log('Shift Needed:', shiftNeeded);
-    console.log('Setting poppedIslandId to:', island.id);
+    console.log('Island:', island.title, '(ID:', island.id, ')');
+    console.log('yOffset:', island.yOffset, '% → Position:', islandY, 'px');
+    console.log('Visible Center:', visibleCenterY, 'px');
+    console.log('Shift Needed:', shiftNeeded, 'px');
     
-    // Apply shift (clamped)
-    setViewportOffset(Math.max(-600, Math.min(600, shiftNeeded)));
+    // Apply shift with higher bounds
+    setViewportOffset(Math.max(-700, Math.min(700, shiftNeeded)));
     
-    // Trigger pop animation
+    // Trigger pop
     setPoppedIslandId(island.id);
     setTimeout(() => {
       setPoppedIslandId(null);
-      console.log('POP RESET - cleared poppedIslandId');
     }, 1200);
   };
 
