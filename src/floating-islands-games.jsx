@@ -37,10 +37,14 @@ class MockFirebaseClient {
   generateInitialData() {
     const now = Date.now();
     return SAMPLE_GAMES.map((game, index) => {
-      // TESTING MODE: Use seconds instead of days (1 day = 15 seconds, 7 days = 105 seconds)
-      const transitTime = game.transitDays * 15 * 1000;
-      // Stagger initial spawn times so islands are spread out
-      const spawnTime = now - (index * transitTime / SAMPLE_GAMES.length);
+      // SHOWCASE MODE: 1 day = 1 hour (3600 seconds)
+      const transitTime = game.transitDays * 3600 * 1000;
+      
+      // Spread games across the screen initially (0% to 100% of their journey)
+      // This ensures all games are visible when page loads
+      const progressPercent = (index / SAMPLE_GAMES.length); // 0.0 to 1.0
+      const elapsedTime = progressPercent * transitTime;
+      const spawnTime = now - elapsedTime;
       
       return {
         ...game,
