@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { X, Database, Wifi, WifiOff, Check } from 'lucide-react';
 
 // ============================================================================
+// UI CONSTANTS
+// ============================================================================
+const UI_CONSTANTS = {
+  HEADER_HEIGHT: 110,
+  FOOTER_HEIGHT: 180,
+  YOFFSET_MIN: 5,
+  YOFFSET_RANGE: 80,
+  VIEWPORT_CLAMP: 700,
+  POP_SCALE: 2.5,
+  POP_DURATION: 1200,
+  WINDOW_RESIZE_THROTTLE: 100
+};
+
+// ============================================================================
 // FIREBASE BACKEND INTEGRATION
 // ============================================================================
 // This uses Firebase Firestore for synchronized island positions
@@ -14,8 +28,8 @@ class MockFirebaseClient {
     this.listeners = [];
     this.connected = true;
     
-    // FORCE REGENERATE - Clear old game distribution (5-85% spread)
-    localStorage.removeItem('islandData');
+    // FORCE REGENERATE - Uncomment only when changing data structure
+    // localStorage.removeItem('islandData');
     
     // Simulate initial data load
     setTimeout(() => {
@@ -37,21 +51,24 @@ class MockFirebaseClient {
   generateInitialData() {
     const now = Date.now();
     return SAMPLE_GAMES.map((game, index) => {
-      // SHOWCASE MODE: 1 day = 1 hour (3600 seconds)
-      const transitTime = game.transitDays * 3600 * 1000;
+      // Store BASE transit time in days (multiplier applied in getIslandPosition)
+      const transitTime = game.transitDays;
+      
+      // For initial positioning, calculate based on showcase mode (1 day = 1 hour)
+      const showcaseMultiplier = 3600 * 1000; // 1 hour in milliseconds
+      const actualTransitTime = transitTime * showcaseMultiplier;
       
       // Spread games across the screen initially (0% to 100% of their journey)
-      // This ensures all games are visible when page loads
       const progressPercent = (index / SAMPLE_GAMES.length); // 0.0 to 1.0
-      const elapsedTime = progressPercent * transitTime;
+      const elapsedTime = progressPercent * actualTransitTime;
       const spawnTime = now - elapsedTime;
       
       return {
         ...game,
         id: now + index, // Generate unique ID based on timestamp + index
         spawnTime, // Server timestamp when island entered the stream
-        transitTime,
-        yOffset: Math.random() * 80 + 5 // Spread from 5% to 85% (closer to header)
+        transitTime, // Store BASE days (not multiplied)
+        yOffset: Math.random() * UI_CONSTANTS.YOFFSET_RANGE + UI_CONSTANTS.YOFFSET_MIN // Spread from 5% to 85% (closer to header)
       };
     });
   }
@@ -73,14 +90,14 @@ class MockFirebaseClient {
   async addIsland(gameData) {
     if (!this.data) return;
     
-    // TESTING MODE: Use seconds instead of days
-    const transitTime = gameData.transitDays * 15 * 1000;
+    // Store BASE transit time (multiplier applied in getIslandPosition)
+    const transitTime = gameData.transitDays;
     const newIsland = {
       ...gameData,
       id: Date.now(), // Generate unique ID
       spawnTime: Date.now(),
-      transitTime,
-      yOffset: Math.random() * 80 + 5 // Spread from 5% to 85% (closer to header)
+      transitTime, // Store base days
+      yOffset: Math.random() * UI_CONSTANTS.YOFFSET_RANGE + UI_CONSTANTS.YOFFSET_MIN // Spread from 5% to 85% (closer to header)
     };
     
     this.data.push(newIsland);
@@ -381,8 +398,6 @@ const FloatingIslandsGames = () => {
   const [islands, setIslands] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [isConnected, setIsConnected] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
   
   // New UI state
   const [viewportOffset, setViewportOffset] = useState(0); // Vertical pan offset (start at 0)
@@ -424,7 +439,6 @@ const FloatingIslandsGames = () => {
   useEffect(() => {
     const unsubscribe = firebaseClient.onSnapshot((data) => {
       setIslands(data || []);
-      setIsConnected(true);
     });
     
     return unsubscribe;
@@ -488,15 +502,21 @@ const FloatingIslandsGames = () => {
     localStorage.setItem('isGridMode', 'false');
   };
 
+  // Helper: Get speed multiplier based on current mode
+  const getSpeedMultiplier = () => {
+    switch(speedMode) {
+      case 'testing': return 1000; // 1 day = 1 second
+      case 'showcase': return 3600 * 1000; // 1 day = 1 hour
+      case 'production': return 24 * 60 * 60 * 1000; // 1 day = 1 real day
+      default: return 3600 * 1000; // Default to showcase
+    }
+  };
+
   // Calculate island position using SERVER timestamp (synchronized across all users)
   // SHOWCASE MODE: Games move at visible speed (1 day = 1 hour)
   const getIslandPosition = (island) => {
     const elapsed = currentTime - island.spawnTime;
-    // Apply speed multiplier based on mode
-    const speedMultiplier = 
-      speedMode === 'testing' ? 1 : 
-      speedMode === 'showcase' ? 3600 : // 1 day = 1 hour (3600 seconds)
-      (24 * 60 * 60); // Production = 1 day = 86400 seconds
+    const speedMultiplier = getSpeedMultiplier();
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1; // LOOP ENABLED
     return progress * 120 - 10; // -10% to 110% (enter/exit screen)
@@ -505,10 +525,7 @@ const FloatingIslandsGames = () => {
   // Check if island is departing soon (last 10% of journey)
   const isDepartingSoon = (island) => {
     const elapsed = currentTime - island.spawnTime;
-    const speedMultiplier = 
-      speedMode === 'testing' ? 1 : 
-      speedMode === 'showcase' ? 3600 : 
-      (24 * 60 * 60);
+    const speedMultiplier = getSpeedMultiplier();
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1;
     return progress > 0.9;
@@ -517,10 +534,7 @@ const FloatingIslandsGames = () => {
   // Check if island is arriving soon (first 10% of journey)
   const isArrivingSoon = (island) => {
     const elapsed = currentTime - island.spawnTime;
-    const speedMultiplier = 
-      speedMode === 'testing' ? 1 : 
-      speedMode === 'showcase' ? 3600 : 
-      (24 * 60 * 60);
+    const speedMultiplier = getSpeedMultiplier();
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1;
     return progress < 0.1;
@@ -582,10 +596,7 @@ const FloatingIslandsGames = () => {
   const upcomingArrivals = sortedIslands
     .map(island => {
       const elapsed = currentTime - island.spawnTime;
-      const speedMultiplier = 
-        speedMode === 'testing' ? 1 : 
-        speedMode === 'showcase' ? 3600 : 
-        (24 * 60 * 60);
+      const speedMultiplier = getSpeedMultiplier();
       const adjustedTransitTime = island.transitTime * speedMultiplier;
       const progress = (elapsed / adjustedTransitTime) % 1;
       return { ...island, progress, adjustedTransitTime };
@@ -598,10 +609,7 @@ const FloatingIslandsGames = () => {
   const departingSoon = islands
     .map(island => {
       const elapsed = currentTime - island.spawnTime;
-      const speedMultiplier = 
-        speedMode === 'testing' ? 1 : 
-        speedMode === 'showcase' ? 3600 : 
-        (24 * 60 * 60);
+      const speedMultiplier = getSpeedMultiplier();
       const adjustedTransitTime = island.transitTime * speedMultiplier;
       const progress = (elapsed / adjustedTransitTime) % 1;
       return { ...island, progress, adjustedTransitTime };
@@ -613,8 +621,8 @@ const FloatingIslandsGames = () => {
   // Zoom to island - centers it in VISIBLE area (between header and footer) and pops it
   const zoomToIsland = (island) => {
     const screenHeight = window.innerHeight;
-    const headerHeight = 110;
-    const footerHeight = 180;
+    const headerHeight = UI_CONSTANTS.HEADER_HEIGHT;
+    const footerHeight = UI_CONSTANTS.FOOTER_HEIGHT;
     
     // Games spawn between 5-85% of screen height
     // We want to center them in the VISIBLE area (between header and footer)
@@ -627,20 +635,14 @@ const FloatingIslandsGames = () => {
     // How much to shift to center it
     const shiftNeeded = visibleCenterY - islandY;
     
-    console.log('=== ZOOM TO ISLAND ===');
-    console.log('Island:', island.title, '(ID:', island.id, ')');
-    console.log('yOffset:', island.yOffset, '% → Position:', islandY, 'px');
-    console.log('Visible Center:', visibleCenterY, 'px');
-    console.log('Shift Needed:', shiftNeeded, 'px');
-    
     // Apply shift with higher bounds
-    setViewportOffset(Math.max(-700, Math.min(700, shiftNeeded)));
+    setViewportOffset(Math.max(-UI_CONSTANTS.VIEWPORT_CLAMP, Math.min(UI_CONSTANTS.VIEWPORT_CLAMP, shiftNeeded)));
     
     // Trigger pop
     setPoppedIslandId(island.id);
     setTimeout(() => {
       setPoppedIslandId(null);
-    }, 1200);
+    }, UI_CONSTANTS.POP_DURATION);
   };
 
   // Viewport dragging handlers
@@ -1068,7 +1070,7 @@ const FloatingIslandsGames = () => {
                 style={{
                   left: `${finalXPos}%`,
                   top: `${finalYPos}%`,
-                  transform: `translate(-50%, -50%) scale(${finalScale * (poppedIslandId === island.id ? 2.5 : 1)})`,
+                  transform: `translate(-50%, -50%) scale(${finalScale * (poppedIslandId === island.id ? UI_CONSTANTS.POP_SCALE : 1)})`,
                   willChange: 'left, top, transform',
                   filter: poppedIslandId === island.id ? 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.8))' : 'none',
                   transition: isGridMode 
