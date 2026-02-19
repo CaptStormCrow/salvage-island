@@ -391,7 +391,7 @@ const FloatingIslandsGames = () => {
   const bottomBarRef = React.useRef(null); // For bottom bar horizontal scroll
   
   // Speed & Animation Controls
-  const [speedMode, setSpeedMode] = useState('testing'); // 'testing' (seconds) or 'production' (days)
+  const [speedMode, setSpeedMode] = useState('showcase'); // 'testing' (seconds), 'showcase' (hours), or 'production' (days)
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   
   // Search & Filters
@@ -405,6 +405,9 @@ const FloatingIslandsGames = () => {
     const saved = localStorage.getItem('isGridMode');
     return saved === 'true';
   });
+  
+  // Pop animation state
+  const [poppedIslandId, setPoppedIslandId] = useState(null);
   
   // Archive Page & Submission Form
   const [showArchive, setShowArchive] = useState(false);
@@ -482,11 +485,14 @@ const FloatingIslandsGames = () => {
   };
 
   // Calculate island position using SERVER timestamp (synchronized across all users)
-  // TESTING MODE: Re-enable looping so islands respawn
+  // SHOWCASE MODE: Games move at visible speed (1 day = 1 hour)
   const getIslandPosition = (island) => {
     const elapsed = currentTime - island.spawnTime;
     // Apply speed multiplier based on mode
-    const speedMultiplier = speedMode === 'testing' ? 1 : (24 * 60 * 60); // Testing=seconds, Production=days
+    const speedMultiplier = 
+      speedMode === 'testing' ? 1 : 
+      speedMode === 'showcase' ? 3600 : // 1 day = 1 hour (3600 seconds)
+      (24 * 60 * 60); // Production = 1 day = 86400 seconds
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1; // LOOP ENABLED
     return progress * 120 - 10; // -10% to 110% (enter/exit screen)
@@ -495,7 +501,10 @@ const FloatingIslandsGames = () => {
   // Check if island is departing soon (last 10% of journey)
   const isDepartingSoon = (island) => {
     const elapsed = currentTime - island.spawnTime;
-    const speedMultiplier = speedMode === 'testing' ? 1 : (24 * 60 * 60);
+    const speedMultiplier = 
+      speedMode === 'testing' ? 1 : 
+      speedMode === 'showcase' ? 3600 : 
+      (24 * 60 * 60);
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1;
     return progress > 0.9;
@@ -504,7 +513,10 @@ const FloatingIslandsGames = () => {
   // Check if island is arriving soon (first 10% of journey)
   const isArrivingSoon = (island) => {
     const elapsed = currentTime - island.spawnTime;
-    const speedMultiplier = speedMode === 'testing' ? 1 : (24 * 60 * 60);
+    const speedMultiplier = 
+      speedMode === 'testing' ? 1 : 
+      speedMode === 'showcase' ? 3600 : 
+      (24 * 60 * 60);
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1;
     return progress < 0.1;
@@ -566,7 +578,10 @@ const FloatingIslandsGames = () => {
   const upcomingArrivals = sortedIslands
     .map(island => {
       const elapsed = currentTime - island.spawnTime;
-      const speedMultiplier = speedMode === 'testing' ? 1 : (24 * 60 * 60);
+      const speedMultiplier = 
+        speedMode === 'testing' ? 1 : 
+        speedMode === 'showcase' ? 3600 : 
+        (24 * 60 * 60);
       const adjustedTransitTime = island.transitTime * speedMultiplier;
       const progress = (elapsed / adjustedTransitTime) % 1;
       return { ...island, progress, adjustedTransitTime };
@@ -579,7 +594,10 @@ const FloatingIslandsGames = () => {
   const departingSoon = islands
     .map(island => {
       const elapsed = currentTime - island.spawnTime;
-      const speedMultiplier = speedMode === 'testing' ? 1 : (24 * 60 * 60);
+      const speedMultiplier = 
+        speedMode === 'testing' ? 1 : 
+        speedMode === 'showcase' ? 3600 : 
+        (24 * 60 * 60);
       const adjustedTransitTime = island.transitTime * speedMultiplier;
       const progress = (elapsed / adjustedTransitTime) % 1;
       return { ...island, progress, adjustedTransitTime };
@@ -588,15 +606,47 @@ const FloatingIslandsGames = () => {
     .sort((a, b) => b.progress - a.progress)
     .slice(0, 5);
 
-  // Zoom to island - centers it in MIDDLE of viewport (not bottom)
+  // Zoom to island - centers it in VISIBLE area (between header and footer) and pops it
   const zoomToIsland = (island) => {
-    // Calculate offset to center island vertically in middle of screen
     const screenHeight = window.innerHeight;
-    const middleOfScreen = screenHeight / 2;
-    const islandYPosition = (island.yOffset / 100) * screenHeight;
-    const targetOffset = middleOfScreen - islandYPosition;
     
-    setViewportOffset(Math.max(-300, Math.min(300, targetOffset)));
+    // The games don't fill the whole screen - they're distributed across a smaller vertical range
+    // So we need to center based on where games actually appear, not the full screen height
+    const headerHeight = 110;
+    const footerHeight = 180;
+    
+    // Calculate visible area center
+    const visibleAreaHeight = screenHeight - headerHeight - footerHeight;
+    const visibleCenterY = headerHeight + (visibleAreaHeight / 2);
+    
+    // Island's Y position (this is where it actually is on screen)
+    const islandY = (island.yOffset / 100) * screenHeight;
+    
+    // Calculate shift: we want to move the island TO the visible center
+    // Current island position + viewportOffset = where we want it
+    // So: islandY + newOffset = visibleCenterY
+    // Therefore: newOffset = visibleCenterY - islandY
+    const shiftNeeded = visibleCenterY - islandY;
+    
+    console.log('=== ZOOM TO ISLAND ===');
+    console.log('Island ID:', island.id);
+    console.log('Island Title:', island.title);
+    console.log('Island yOffset:', island.yOffset);
+    console.log('Screen Height:', screenHeight);
+    console.log('Visible Center Y:', visibleCenterY);
+    console.log('Island Y:', islandY);
+    console.log('Shift Needed:', shiftNeeded);
+    console.log('Setting poppedIslandId to:', island.id);
+    
+    // Apply shift (clamped)
+    setViewportOffset(Math.max(-600, Math.min(600, shiftNeeded)));
+    
+    // Trigger pop animation
+    setPoppedIslandId(island.id);
+    setTimeout(() => {
+      setPoppedIslandId(null);
+      console.log('POP RESET - cleared poppedIslandId');
+    }, 1200);
   };
 
   // Viewport dragging handlers
@@ -723,6 +773,22 @@ const FloatingIslandsGames = () => {
           50% {
             transform: translate(-50%, -50%) translateY(-10px);
           }
+        }
+        
+        @keyframes popIsland {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.3);
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+        
+        .animate-pop {
+          animation: popIsland 0.8s ease-in-out;
         }
         
         .animate-float {
@@ -1008,13 +1074,16 @@ const FloatingIslandsGames = () => {
                 style={{
                   left: `${finalXPos}%`,
                   top: `${finalYPos}%`,
-                  transform: `translate(-50%, -50%) scale(${finalScale})`,
+                  transform: `translate(-50%, -50%) scale(${finalScale * (poppedIslandId === island.id ? 2.5 : 1)})`,
                   willChange: 'left, top, transform',
+                  filter: poppedIslandId === island.id ? 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.8))' : 'none',
                   transition: isGridMode 
                     ? 'left 1.2s ease-in-out, top 1.2s ease-in-out, transform 1.2s ease-in-out' 
-                    : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out',
+                    : poppedIslandId === island.id 
+                      ? 'left 1s linear, top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease-in' 
+                      : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out, filter 0.3s ease-out',
                   animationDelay: animationsEnabled && !isGridMode ? `${island.id % 3}s` : '0s',
-                  zIndex: isGridMode ? 10 : Math.floor(island.yOffset)
+                  zIndex: poppedIslandId === island.id ? 9999 : (isGridMode ? 10 : Math.floor(island.yOffset))
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1424,14 +1493,7 @@ const FloatingIslandsGames = () => {
             </div>
           </div>
         </div>
-      ) : (
-        <button
-          onClick={() => setShowAdminPanel(true)}
-          className="fixed bottom-56 left-6 bg-purple-600/90 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-semibold z-40 backdrop-blur-sm btn-press"
-        >
-          Admin
-        </button>
-      )}
+      ) : null}
 
       {/* SIDEBAR - Click outside to close */}
       {showSidebar && (
