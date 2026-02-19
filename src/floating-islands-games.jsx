@@ -44,6 +44,7 @@ class MockFirebaseClient {
       
       return {
         ...game,
+        id: now + index, // Generate unique ID based on timestamp + index
         spawnTime, // Server timestamp when island entered the stream
         transitTime,
         yOffset: Math.random() * 80 + 5 // Spread from 5% to 85% (closer to header)
