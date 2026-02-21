@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Database, Wifi, WifiOff, Check } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 // ============================================================================
 // UI CONSTANTS
@@ -771,6 +771,15 @@ const FloatingIslandsGames = () => {
           }
         }
         
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+        }
+        
         @keyframes popIsland {
           0% {
             transform: translate(-50%, -50%) scale(1);
@@ -785,6 +794,10 @@ const FloatingIslandsGames = () => {
         
         .animate-pop {
           animation: popIsland 0.8s ease-in-out;
+        }
+        
+        .animate-pulse-pop {
+          animation: pulse 0.4s ease-in-out 3;
         }
         
         .animate-float {
@@ -1066,18 +1079,23 @@ const FloatingIslandsGames = () => {
                 key={island.id}
                 className={`absolute cursor-pointer hover:scale-110 ${
                   animationsEnabled && !isGridMode ? 'animate-float' : ''
-                }`}
+                } ${poppedIslandId === island.id ? 'animate-pulse-pop' : ''}`}
                 style={{
                   left: `${finalXPos}%`,
                   top: `${finalYPos}%`,
                   transform: `translate(-50%, -50%) scale(${finalScale * (poppedIslandId === island.id ? UI_CONSTANTS.POP_SCALE : 1)})`,
-                  willChange: 'left, top, transform',
-                  filter: poppedIslandId === island.id ? 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.8))' : 'none',
+                  willChange: 'left, top, transform, filter, box-shadow',
+                  filter: poppedIslandId === island.id 
+                    ? 'drop-shadow(0 0 40px rgba(255, 215, 0, 1)) drop-shadow(0 0 80px rgba(255, 140, 0, 0.6)) brightness(1.3) contrast(1.2)' 
+                    : 'none',
+                  boxShadow: poppedIslandId === island.id 
+                    ? '0 0 0 4px rgba(255, 215, 0, 0.8), 0 0 0 8px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.4)' 
+                    : 'none',
                   transition: isGridMode 
                     ? 'left 1.2s ease-in-out, top 1.2s ease-in-out, transform 1.2s ease-in-out' 
                     : poppedIslandId === island.id 
-                      ? 'left 1s linear, top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease-in' 
-                      : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out, filter 0.3s ease-out',
+                      ? 'left 1s linear, top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease-in, box-shadow 0.3s ease-in' 
+                      : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out, filter 0.3s ease-out, box-shadow 0.3s ease-out',
                   animationDelay: animationsEnabled && !isGridMode ? `${island.id % 3}s` : '0s',
                   zIndex: poppedIslandId === island.id ? 9999 : (isGridMode ? 10 : Math.floor(island.yOffset))
                 }}
@@ -1406,8 +1424,8 @@ const FloatingIslandsGames = () => {
         </button>
       )}
 
-      {/* Admin Panel with Controls - Hidden in production, enable in dev only */}
-      {false && showAdminPanel ? (
+      {/* Admin Panel - Disabled */}
+      {false ? (
         <div className="fixed bottom-56 left-6 bg-white/95 backdrop-blur-md rounded-xl p-4 shadow-2xl border-2 border-purple-300 z-40 w-72">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
