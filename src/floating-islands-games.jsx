@@ -28,8 +28,8 @@ class MockFirebaseClient {
     this.listeners = [];
     this.connected = true;
     
-    // FORCE REGENERATE - Uncomment only when changing data structure
-    // localStorage.removeItem('islandData');
+    // CLOUD PORTAL UPDATE - Clear to regenerate with new spawn positions (10-40%)
+    localStorage.removeItem('islandData');
     
     // Simulate initial data load
     setTimeout(() => {
@@ -58,8 +58,9 @@ class MockFirebaseClient {
       const showcaseMultiplier = 3600 * 1000; // 1 hour in milliseconds
       const actualTransitTime = transitTime * showcaseMultiplier;
       
-      // Spread games across the screen initially (0% to 100% of their journey)
-      const progressPercent = (index / SAMPLE_GAMES.length); // 0.0 to 1.0
+      // Spread games from 10% to 40% of their journey (all visible on screen)
+      // This ensures users see games immediately when page loads
+      const progressPercent = 0.1 + (index / SAMPLE_GAMES.length) * 0.3; // 0.1 to 0.4 (10% to 40%)
       const elapsedTime = progressPercent * actualTransitTime;
       const spawnTime = now - elapsedTime;
       
@@ -531,13 +532,13 @@ const FloatingIslandsGames = () => {
     return progress > 0.9;
   };
 
-  // Check if island is arriving soon (first 10% of journey)
+  // Check if island is arriving soon (first 20% of journey)
   const isArrivingSoon = (island) => {
     const elapsed = currentTime - island.spawnTime;
     const speedMultiplier = getSpeedMultiplier();
     const adjustedTransitTime = island.transitTime * speedMultiplier;
     const progress = (elapsed / adjustedTransitTime) % 1;
-    return progress < 0.1;
+    return progress < 0.2; // Show "Just Arrived!" for first 20% of journey
   };
 
   // Admin: Add new island
@@ -1047,6 +1048,36 @@ const FloatingIslandsGames = () => {
             />
           </div>
         )}
+        
+        {/* Cloud Portals - Entry (Left) and Exit (Right) */}
+        {!isGridMode && (
+          <>
+            {/* Left Cloud Column (Entry Portal) */}
+            <div className="absolute left-0 top-0 bottom-24 w-32 pointer-events-none z-30">
+              <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-white/20 to-transparent backdrop-blur-sm"></div>
+              {/* Cloud decorations at different heights */}
+              <div className="absolute top-[10%] left-4 text-6xl opacity-70">☁️</div>
+              <div className="absolute top-[25%] left-2 text-5xl opacity-60">☁️</div>
+              <div className="absolute top-[40%] left-6 text-7xl opacity-80">☁️</div>
+              <div className="absolute top-[55%] left-1 text-6xl opacity-70">☁️</div>
+              <div className="absolute top-[70%] left-5 text-5xl opacity-60">☁️</div>
+              <div className="absolute top-[85%] left-3 text-7xl opacity-75">☁️</div>
+            </div>
+            
+            {/* Right Cloud Column (Exit Portal) */}
+            <div className="absolute right-0 top-0 bottom-24 w-32 pointer-events-none z-30">
+              <div className="absolute inset-0 bg-gradient-to-l from-white/40 via-white/20 to-transparent backdrop-blur-sm"></div>
+              {/* Cloud decorations at different heights */}
+              <div className="absolute top-[15%] right-4 text-6xl opacity-70">☁️</div>
+              <div className="absolute top-[30%] right-2 text-5xl opacity-60">☁️</div>
+              <div className="absolute top-[45%] right-6 text-7xl opacity-80">☁️</div>
+              <div className="absolute top-[60%] right-1 text-6xl opacity-70">☁️</div>
+              <div className="absolute top-[75%] right-5 text-5xl opacity-60">☁️</div>
+              <div className="absolute top-[90%] right-3 text-7xl opacity-75">☁️</div>
+            </div>
+          </>
+        )}
+        
         {/* Floating Islands */}
         <div 
           className="absolute inset-0 transition-transform duration-150"
@@ -1057,6 +1088,18 @@ const FloatingIslandsGames = () => {
             const isDeparting = isDepartingSoon(island);
             const isArriving = isArrivingSoon(island);
             const islandSize = getIslandSize(island.transitDays);
+            
+            // Calculate opacity for fade in/out through cloud portals
+            let opacity = 1;
+            if (!isGridMode) {
+              if (xPos < 0) {
+                // Entering from left cloud (fade in from -10% to 0%)
+                opacity = Math.max(0, (xPos + 10) / 10); // 0 at -10%, 1 at 0%
+              } else if (xPos > 100) {
+                // Exiting into right cloud (fade out from 100% to 110%)
+                opacity = Math.max(0, 1 - (xPos - 100) / 10); // 1 at 100%, 0 at 110%
+              }
+            }
             
             // Calculate position based on mode
             let finalXPos, finalYPos, finalScale;
@@ -1084,7 +1127,8 @@ const FloatingIslandsGames = () => {
                   left: `${finalXPos}%`,
                   top: `${finalYPos}%`,
                   transform: `translate(-50%, -50%) scale(${finalScale * (poppedIslandId === island.id ? UI_CONSTANTS.POP_SCALE : 1)})`,
-                  willChange: 'left, top, transform, filter, box-shadow',
+                  opacity: opacity,
+                  willChange: 'left, top, transform, filter, box-shadow, opacity',
                   filter: poppedIslandId === island.id 
                     ? 'drop-shadow(0 0 40px rgba(255, 215, 0, 1)) drop-shadow(0 0 80px rgba(255, 140, 0, 0.6)) brightness(1.3) contrast(1.2)' 
                     : 'none',
@@ -1092,10 +1136,10 @@ const FloatingIslandsGames = () => {
                     ? '0 0 0 4px rgba(255, 215, 0, 0.8), 0 0 0 8px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.4)' 
                     : 'none',
                   transition: isGridMode 
-                    ? 'left 1.2s ease-in-out, top 1.2s ease-in-out, transform 1.2s ease-in-out' 
+                    ? 'left 1.2s ease-in-out, top 1.2s ease-in-out, transform 1.2s ease-in-out, opacity 1.2s ease-in-out' 
                     : poppedIslandId === island.id 
-                      ? 'left 1s linear, top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease-in, box-shadow 0.3s ease-in' 
-                      : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out, filter 0.3s ease-out, box-shadow 0.3s ease-out',
+                      ? 'left 1s linear, top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease-in, box-shadow 0.3s ease-in, opacity 0.8s ease-in-out' 
+                      : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out, filter 0.3s ease-out, box-shadow 0.3s ease-out, opacity 0.8s ease-in-out',
                   animationDelay: animationsEnabled && !isGridMode ? `${island.id % 3}s` : '0s',
                   zIndex: poppedIslandId === island.id ? 9999 : (isGridMode ? 10 : Math.floor(island.yOffset))
                 }}
