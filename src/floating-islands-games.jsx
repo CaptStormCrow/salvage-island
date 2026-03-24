@@ -492,6 +492,9 @@ const FloatingIslandsGames = () => {
   // Back to Top button visibility
   const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // Spotlight: brief island highlight before modal opens
+  const [spotlightIslandId, setSpotlightIslandId] = useState(null);
+
   // Subscribe to Firebase real-time updates
   useEffect(() => {
     const unsubscribe = firebaseClient.onSnapshot((data) => {
@@ -549,6 +552,13 @@ const FloatingIslandsGames = () => {
     setIsGridMode(true);
     localStorage.setItem('isGridMode', 'true');
   };
+
+  // Auto-switch to grid mode on mobile (small screens can't pan the sky well)
+  useEffect(() => {
+    if (window.innerWidth < 768 && !isGridMode) {
+      activateGridMode('newest', 'all');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset to streaming mode
   const resetToStreaming = () => {
@@ -653,6 +663,23 @@ const FloatingIslandsGames = () => {
         return 0;
     }
   });
+
+  // In stream mode: all islands render but non-matching are dimmed.
+  // In grid mode: hard filter (sortedIslands already filtered).
+  const matchesFilter = (island) => {
+    if (!searchQuery && filterGenre === 'all') return true;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery ||
+      island.title.toLowerCase().includes(q) ||
+      island.creator.toLowerCase().includes(q) ||
+      island.tags.some(tag => tag.toLowerCase().includes(q));
+    const matchesGenre = filterGenre === 'all' ||
+      island.tags.some(tag => tag.toLowerCase().includes(filterGenre));
+    return matchesSearch && matchesGenre;
+  };
+  const displayIslands = isGridMode
+    ? sortedIslands
+    : [...islands].sort((a, b) => b.spawnTime - a.spawnTime);
 
   // Get visible islands (currently in viewport range -10% to 110%)
   const visibleIslands = sortedIslands.filter(island => {
@@ -792,14 +819,25 @@ const FloatingIslandsGames = () => {
           setShowSubmissionForm(false);
         } else if (showArchive) {
           if (selectedGame) {
-            setSelectedGame(null); // Close detail modal first
+            setSelectedGame(null);
           } else {
-            setShowArchive(false); // Then close archive
+            setShowArchive(false);
           }
         } else if (selectedGame) {
           setSelectedGame(null);
         } else if (showSidebar) {
           setShowSidebar(false);
+        }
+      }
+      // Arrow keys navigate between games in modal
+      if (selectedGame && !showSubmissionForm) {
+        if (e.key === 'ArrowRight') {
+          const idx = islands.findIndex(i => i.id === selectedGame.id);
+          if (idx < islands.length - 1) setSelectedGame(islands[idx + 1]);
+        }
+        if (e.key === 'ArrowLeft') {
+          const idx = islands.findIndex(i => i.id === selectedGame.id);
+          if (idx > 0) setSelectedGame(islands[idx - 1]);
         }
       }
     };
@@ -934,6 +972,38 @@ const FloatingIslandsGames = () => {
         .btn-press:active {
           transform: scale(0.95);
           box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Island shadow - shrinks + fades as island floats up, synced with float */
+        @keyframes shadowFloat {
+          0%, 100% { transform: translateX(-50%) scaleX(1);    opacity: 0.22; }
+          50%       { transform: translateX(-50%) scaleX(0.55); opacity: 0.07; }
+        }
+        .island-shadow {
+          animation: shadowFloat 6s ease-in-out infinite;
+        }
+
+        /* Modal entrance - scale up with slight spring */
+        @keyframes modalEnter {
+          from { opacity: 0; transform: scale(0.92) translateY(12px); }
+          to   { opacity: 1; transform: scale(1)    translateY(0);    }
+        }
+        .modal-enter {
+          animation: modalEnter 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* Spotlight overlay - brief darkening before modal opens */
+        @keyframes spotlightIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .spotlight-overlay {
+          animation: spotlightIn 0.2s ease-out both;
+        }
+
+        /* Mobile: narrow cloud portals, keep things readable */
+        @media (max-width: 768px) {
+          .cloud-portal { width: 4rem !important; }
         }
       `}</style>
       
@@ -1179,7 +1249,7 @@ const FloatingIslandsGames = () => {
         {!isGridMode && (
           <>
             {/* Left Cloud Column (Entry Portal) - wall of clouds */}
-            <div className="absolute left-0 top-0 bottom-0 w-48 pointer-events-none z-30 overflow-hidden">
+            <div className="cloud-portal absolute left-0 top-0 bottom-0 w-48 pointer-events-none z-30 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-sky-100/70 via-sky-50/30 to-transparent" />
               {[
                 { top: '-6%',  left: -22, w: 200, h: 100, op: 0.93 },
@@ -1208,7 +1278,7 @@ const FloatingIslandsGames = () => {
             </div>
             
             {/* Right Cloud Column (Exit Portal) - wall of clouds */}
-            <div className="absolute right-0 top-0 bottom-0 w-48 pointer-events-none z-30 overflow-hidden">
+            <div className="cloud-portal absolute right-0 top-0 bottom-0 w-48 pointer-events-none z-30 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-l from-sky-100/70 via-sky-50/30 to-transparent" />
               {[
                 { top: '-4%',  right: -20, w: 195, h:  98, op: 0.91 },
@@ -1253,17 +1323,18 @@ const FloatingIslandsGames = () => {
             WebkitMaskComposite: 'destination-in',
           }}
         >
-          {sortedIslands.map((island, index) => {
+          {displayIslands.map((island, index) => {
             const isDeparting = isDepartingSoon(island);
             const isArriving = isArrivingSoon(island);
             const islandSize = getIslandSize(island.transitDays);
             const isPopped = poppedIslandId === island.id;
             const animProps = islandAnimProps[island.id];
+            const isDimmed = !isGridMode && !matchesFilter(island);
 
             // Outer div: handles position only (CSS anim for stream, inline for grid)
             let outerStyle;
             if (isGridMode) {
-              const gridPos = getGridPosition(index, sortedIslands.length);
+              const gridPos = getGridPosition(index, displayIslands.length);
               outerStyle = {
                 left: `${gridPos.xPos}%`,
                 top: `${gridPos.yPos}%`,
@@ -1291,6 +1362,9 @@ const FloatingIslandsGames = () => {
                 style={{
                   ...outerStyle,
                   zIndex: isPopped ? 9999 : (isGridMode ? 10 : Math.floor(island.yOffset)),
+                  opacity: isDimmed ? 0.15 : 1,
+                  pointerEvents: isDimmed ? 'none' : 'auto',
+                  transition: 'opacity 0.4s ease',
                 }}
               >
                 {/* Scale + effects wrapper — separate element so it doesn't conflict with drift or float */}
@@ -1314,11 +1388,18 @@ const FloatingIslandsGames = () => {
                     style={{ animationDelay: `${(index % 5) * 1.2}s` }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedGame(island);
+                      setSpotlightIslandId(island.id);
+                      setTimeout(() => {
+                        setSelectedGame(island);
+                        setSpotlightIslandId(null);
+                      }, 260);
                     }}
                   >
-                    {/* Island shadow */}
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 bg-black/20 rounded-full blur-md"></div>
+                    {/* Island shadow — shrinks and fades as island floats up */}
+                    <div
+                      className="absolute -bottom-8 island-shadow w-32 h-8 bg-black/25 rounded-full blur-md"
+                      style={{ animationDelay: `${(index % 5) * 1.2}s` }}
+                    />
 
                     {/* Status indicator */}
                     {isDeparting && (
@@ -1346,11 +1427,16 @@ const FloatingIslandsGames = () => {
                               transform: theme.skew,
                             }}
                           >
-                            {/* Genre icon at peak */}
-                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-10 drop-shadow-lg">
-                              <svg viewBox="0 0 20 20" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                                {getThemeIcon(themeName)}
-                              </svg>
+                            {/* Genre icon at peak — white circle badge */}
+                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-10">
+                              <div
+                                className="w-8 h-8 rounded-full bg-white flex items-center justify-center"
+                                style={{ boxShadow: `0 2px 8px ${theme.glow}, 0 1px 3px rgba(0,0,0,0.2)` }}
+                              >
+                                <svg viewBox="0 0 20 20" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                                  {getThemeIcon(themeName)}
+                                </svg>
+                              </div>
                             </div>
                             {/* Game thumbnail on island */}
                             <div
@@ -1390,7 +1476,15 @@ const FloatingIslandsGames = () => {
         {sortedIslands.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center max-w-md px-6">
-              <div className="text-6xl mb-4">☁️</div>
+              {/* CSS cloud illustration */}
+              <div className="mb-6 flex justify-center">
+                <div className="relative w-28 h-16 opacity-60">
+                  <div className="absolute bottom-0 left-0 right-0 h-7 bg-sky-400 rounded-2xl" />
+                  <div className="absolute bottom-4 left-1 w-11 h-11 bg-sky-400 rounded-full" />
+                  <div className="absolute bottom-4 left-7 w-16 h-16 bg-sky-400 rounded-full" />
+                  <div className="absolute bottom-4 right-1 w-9 h-9 bg-sky-400 rounded-full" />
+                </div>
+              </div>
               <p className="text-sky-700 text-2xl font-bold mb-2">
                 {searchQuery ? 'No games match your search' : 
                  isGridMode && filterGenre !== 'all' ? `No ${filterGenre} games found` :
@@ -1426,18 +1520,40 @@ const FloatingIslandsGames = () => {
         )}
       </div>
 
+      {/* Spotlight overlay — brief darkening when an island is clicked, before modal opens */}
+      {spotlightIslandId && !selectedGame && (
+        <div className="fixed inset-0 bg-black/40 z-[45] pointer-events-none spotlight-overlay" />
+      )}
+
       {/* Game Detail Modal */}
-      {selectedGame && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedGame(null)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6" onClick={(e) => e.stopPropagation()}>
+      {selectedGame && (() => {
+        const modalIdx = islands.findIndex(i => i.id === selectedGame.id);
+        return (
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 p-4" onClick={() => setSelectedGame(null)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 modal-enter" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-start mb-4">
-              <h2 className="text-3xl font-bold text-gray-800">{selectedGame.title}</h2>
-              <button 
-                onClick={() => setSelectedGame(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
+              <h2 className="text-3xl font-bold text-gray-800 pr-4">{selectedGame.title}</h2>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => modalIdx > 0 && setSelectedGame(islands[modalIdx - 1])}
+                  disabled={modalIdx <= 0}
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg leading-none"
+                  title="Previous game (←)"
+                >‹</button>
+                <span className="text-xs text-gray-400 px-1 whitespace-nowrap">{modalIdx + 1} / {islands.length}</span>
+                <button
+                  onClick={() => modalIdx < islands.length - 1 && setSelectedGame(islands[modalIdx + 1])}
+                  disabled={modalIdx >= islands.length - 1}
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg leading-none"
+                  title="Next game (→)"
+                >›</button>
+                <button
+                  onClick={() => setSelectedGame(null)}
+                  className="ml-1 text-gray-500 hover:text-gray-700 p-1"
+                >
+                  <X size={22} />
+                </button>
+              </div>
             </div>
             
             <img 
@@ -1500,7 +1616,8 @@ const FloatingIslandsGames = () => {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Back to Top Button */}
       {showBackToTop && !isGridMode && (
@@ -2018,13 +2135,15 @@ const RecruiterViewComponent = ({ games, onClose, onSelectGame, selectedGame, on
     games.forEach(game => {
       const key = game.creator;
       if (!devMap[key]) {
-        devMap[key] = { name: key, games: [], techStack: new Set(), tags: new Set() };
+        devMap[key] = { name: key, games: [], techStack: new Set(), tags: new Set(), email: null, portfolioUrl: null };
       }
       devMap[key].games.push(game);
       if (Array.isArray(game.techStack)) {
         game.techStack.forEach(t => devMap[key].techStack.add(t));
       }
       game.tags.forEach(t => devMap[key].tags.add(t));
+      if (game.email && !devMap[key].email) devMap[key].email = game.email;
+      if (game.portfolioUrl && !devMap[key].portfolioUrl) devMap[key].portfolioUrl = game.portfolioUrl;
     });
     return Object.values(devMap)
       .filter(dev => !searchQuery || dev.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -2112,6 +2231,32 @@ const RecruiterViewComponent = ({ games, onClose, onSelectGame, selectedGame, on
                     ))}
                   </div>
                 </div>
+
+                {/* Contact CTAs */}
+                <div className="mt-4 space-y-2">
+                  {dev.portfolioUrl && (
+                    <a
+                      href={dev.portfolioUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 w-full text-xs font-semibold px-3 py-2 rounded-lg transition-all hover:opacity-90"
+                      style={{ background: theme.glow, color: theme.border, border: `1px solid ${theme.border}50` }}
+                    >
+                      Portfolio →
+                    </a>
+                  )}
+                  {dev.email && (
+                    <a
+                      href={`mailto:${dev.email}`}
+                      className="flex items-center justify-center gap-1.5 w-full text-xs font-semibold px-3 py-2 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors border border-white/20"
+                    >
+                      Contact Dev
+                    </a>
+                  )}
+                  {!dev.portfolioUrl && !dev.email && (
+                    <p className="text-white/20 text-xs italic text-center">No contact info</p>
+                  )}
+                </div>
               </div>
 
               {/* RIGHT: Floating mini islands */}
@@ -2129,8 +2274,12 @@ const RecruiterViewComponent = ({ games, onClose, onSelectGame, selectedGame, on
                         {/* Mini floating island */}
                         <div className="relative animate-float" style={{ animationDelay: `${gi * 0.9}s` }}>
                           <div
-                            className="w-36 h-28 rounded-t-full transform -skew-x-2 shadow-2xl group-hover:scale-105 transition-transform duration-200"
-                            style={{ background: `linear-gradient(to bottom, ${gTheme.gradFrom}, ${gTheme.gradTo})` }}
+                            className="w-36 h-28 shadow-2xl group-hover:scale-105 transition-transform duration-200"
+                            style={{
+                              background: `linear-gradient(to bottom, ${gTheme.gradFrom}, ${gTheme.gradTo})`,
+                              borderRadius: gTheme.shape,
+                              transform: gTheme.skew || undefined,
+                            }}
                           >
                             <div className="absolute inset-2 rounded overflow-hidden" style={{ border: `3px solid ${gTheme.border}` }}>
                               <img src={game.thumbnail} alt={game.title} className="w-full h-full object-cover" />
@@ -2207,7 +2356,7 @@ const RecruiterViewComponent = ({ games, onClose, onSelectGame, selectedGame, on
 // Game Submission Form Component (Embedded)
 const GameSubmissionFormComponent = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    title: '', creator: '', thumbnail: '', description: '', tags: [], techStack: '', transitDays: 3, gameUrl: '', email: ''
+    title: '', creator: '', thumbnail: '', description: '', tags: [], techStack: '', transitDays: 3, gameUrl: '', email: '', portfolioUrl: ''
   });
   const [newTag, setNewTag] = useState('');
   const [errors, setErrors] = useState({});
@@ -2351,6 +2500,10 @@ const GameSubmissionFormComponent = ({ onClose, onSubmit }) => {
             <label className="block text-sm font-semibold text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
             <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`w-full px-4 py-2 rounded-lg border-2 ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:border-sky-500 focus:outline-none`} placeholder="your@email.com" />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Portfolio URL <span className="text-gray-400 font-normal">(optional — shown to recruiters)</span></label>
+            <input type="url" value={formData.portfolioUrl} onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })} className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-sky-500 focus:outline-none" placeholder="https://yourportfolio.com" />
           </div>
           <div className="flex gap-3 pt-4">
             <button type="button" onClick={onClose} className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
