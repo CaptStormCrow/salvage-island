@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Check } from 'lucide-react';
 
 // ============================================================================
@@ -445,18 +445,18 @@ const FloatingIslandsGames = () => {
     return unsubscribe;
   }, []);
 
-  // Update current time every second for smooth animation
+  // Update current time for sidebar/badge refreshes (CSS animations handle visual smoothness)
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 1000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
   // Calculate island size based on transit days (shorter = larger, longer = smaller)
   const getIslandSize = (transitDays) => {
-    // 1 day = largest (scale 1.4), 7 days = smallest (scale 0.8)
-    const minScale = 0.8;
+    // 1 day = largest (scale 1.4), 7 days = smallest (scale 0.5)
+    const minScale = 0.5;
     const maxScale = 1.4;
     const scale = maxScale - ((transitDays - 1) / 6) * (maxScale - minScale);
     return scale;
@@ -475,7 +475,7 @@ const FloatingIslandsGames = () => {
     const gridWidth = 80; // Percentage of screen width
     const gridHeight = 70; // Percentage of screen height
     const startX = (100 - gridWidth) / 2;
-    const startY = 15; // Start from top
+    const startY = 10; // Start from top
     
     const colWidth = gridWidth / cols;
     const rowHeight = 15; // Spacing between rows
@@ -512,6 +512,20 @@ const FloatingIslandsGames = () => {
       default: return 3600 * 1000; // Default to showcase
     }
   };
+
+  // Pre-compute CSS animation properties once per island set (CSS engine handles the rest)
+  const islandAnimProps = useMemo(() => {
+    const multiplierMap = { testing: 1000, showcase: 3600 * 1000, production: 24 * 3600 * 1000 };
+    const multiplier = multiplierMap[speedMode] || multiplierMap.showcase;
+    const result = {};
+    islands.forEach(island => {
+      const duration = island.transitTime * multiplier;
+      const elapsed = Date.now() - island.spawnTime;
+      const cycleMs = ((elapsed % duration) + duration) % duration;
+      result[island.id] = { duration, cycleMs };
+    });
+    return result;
+  }, [islands, speedMode]);
 
   // Calculate island position using SERVER timestamp (synchronized across all users)
   // SHOWCASE MODE: Games move at visible speed (1 day = 1 hour)
@@ -765,10 +779,10 @@ const FloatingIslandsGames = () => {
         
         @keyframes float {
           0%, 100% {
-            transform: translate(-50%, -50%) translateY(0px);
+            transform: translateY(0px);
           }
           50% {
-            transform: translate(-50%, -50%) translateY(-10px);
+            transform: translateY(-10px);
           }
         }
         
@@ -804,7 +818,26 @@ const FloatingIslandsGames = () => {
         .animate-float {
           animation: float 6s ease-in-out infinite;
         }
-        
+
+        /* CSS drift animation for island movement - buttery smooth, no JS updates needed */
+        @keyframes driftAcross {
+          from { left: -10%; }
+          to { left: 110%; }
+        }
+
+        /* Island anchor - centering only, no transform conflicts */
+        .island-anchor {
+          transform: translate(-50%, -50%);
+        }
+
+        /* Island hover - brightness only so it doesn't conflict with scale/float transforms */
+        .island-float {
+          transition: filter 0.2s ease;
+        }
+        .island-float:hover {
+          filter: brightness(1.08);
+        }
+
         /* Hamburger Menu Morphing Animation */
         .hamburger-line {
           transition: all 0.3s ease-in-out;
@@ -1040,10 +1073,10 @@ const FloatingIslandsGames = () => {
         {isScrolling && (
           <div className="fixed right-0 top-0 bottom-24 w-4 pointer-events-none z-35 transition-opacity duration-300">
             <div 
-              className="absolute right-0 w-4 h-6 transition-all duration-150"
+              className="absolute right-0 w-3 h-8 transition-all duration-150"
               style={{
                 top: `${((300 - viewportOffset) / 600) * (window.innerHeight - 120 - 96)}px`,
-                background: 'radial-gradient(ellipse at right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, transparent 70%)'
+                background: 'radial-gradient(ellipse at right, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, transparent 60%)'
               }}
             />
           </div>
@@ -1053,135 +1086,158 @@ const FloatingIslandsGames = () => {
         {!isGridMode && (
           <>
             {/* Left Cloud Column (Entry Portal) */}
-            <div className="absolute left-0 top-0 bottom-24 w-32 pointer-events-none z-30">
-              <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-white/20 to-transparent backdrop-blur-sm"></div>
-              {/* Cloud decorations at different heights */}
-              <div className="absolute top-[10%] left-4 text-6xl opacity-70">☁️</div>
-              <div className="absolute top-[25%] left-2 text-5xl opacity-60">☁️</div>
-              <div className="absolute top-[40%] left-6 text-7xl opacity-80">☁️</div>
-              <div className="absolute top-[55%] left-1 text-6xl opacity-70">☁️</div>
-              <div className="absolute top-[70%] left-5 text-5xl opacity-60">☁️</div>
-              <div className="absolute top-[85%] left-3 text-7xl opacity-75">☁️</div>
+            <div className="absolute left-0 top-0 bottom-24 w-36 pointer-events-none z-30 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-sky-200/50 via-white/20 to-transparent" />
+              {[
+                { top: '3%',  left: -12, w: 130, h: 70, op: 0.90 },
+                { top: '16%', left:   5, w: 110, h: 58, op: 0.85 },
+                { top: '29%', left:  -8, w: 145, h: 76, op: 0.92 },
+                { top: '43%', left:   2, w: 125, h: 64, op: 0.88 },
+                { top: '57%', left: -15, w: 140, h: 72, op: 0.90 },
+                { top: '71%', left:   8, w: 115, h: 60, op: 0.82 },
+                { top: '84%', left:  -5, w: 132, h: 68, op: 0.87 },
+              ].map((c, i) => (
+                <div key={i} style={{ position: 'absolute', top: c.top, left: c.left, width: c.w, height: c.h }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '44%', background: `rgba(255,255,255,${c.op})`, borderRadius: 10, filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: '27%', left: '8%',  width: '38%', height: '68%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: '32%', left: '32%', width: '44%', height: '80%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: '20%', right: '6%', width: '33%', height: '58%', background: `rgba(255,255,255,${c.op * 0.9})`, borderRadius: '50%', filter: 'blur(3px)' }} />
+                </div>
+              ))}
             </div>
             
             {/* Right Cloud Column (Exit Portal) */}
-            <div className="absolute right-0 top-0 bottom-24 w-32 pointer-events-none z-30">
-              <div className="absolute inset-0 bg-gradient-to-l from-white/40 via-white/20 to-transparent backdrop-blur-sm"></div>
-              {/* Cloud decorations at different heights */}
-              <div className="absolute top-[15%] right-4 text-6xl opacity-70">☁️</div>
-              <div className="absolute top-[30%] right-2 text-5xl opacity-60">☁️</div>
-              <div className="absolute top-[45%] right-6 text-7xl opacity-80">☁️</div>
-              <div className="absolute top-[60%] right-1 text-6xl opacity-70">☁️</div>
-              <div className="absolute top-[75%] right-5 text-5xl opacity-60">☁️</div>
-              <div className="absolute top-[90%] right-3 text-7xl opacity-75">☁️</div>
+            <div className="absolute right-0 top-0 bottom-24 w-36 pointer-events-none z-30 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-l from-sky-200/50 via-white/20 to-transparent" />
+              {[
+                { top: '8%',  right: -10, w: 128, h: 68, op: 0.88 },
+                { top: '21%', right:   5, w: 112, h: 60, op: 0.85 },
+                { top: '35%', right: -12, w: 142, h: 74, op: 0.91 },
+                { top: '49%', right:   0, w: 122, h: 64, op: 0.87 },
+                { top: '63%', right:  -8, w: 136, h: 70, op: 0.90 },
+                { top: '77%', right:   7, w: 110, h: 60, op: 0.83 },
+                { top: '90%', right:  -4, w: 130, h: 66, op: 0.88 },
+              ].map((c, i) => (
+                <div key={i} style={{ position: 'absolute', top: c.top, right: c.right, width: c.w, height: c.h }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '44%', background: `rgba(255,255,255,${c.op})`, borderRadius: 10, filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: '27%', left: '8%',  width: '38%', height: '68%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: '32%', left: '32%', width: '44%', height: '80%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: '20%', right: '6%', width: '33%', height: '58%', background: `rgba(255,255,255,${c.op * 0.9})`, borderRadius: '50%', filter: 'blur(3px)' }} />
+                </div>
+              ))}
             </div>
           </>
         )}
         
         {/* Floating Islands */}
-        <div 
+        <div
           className="absolute inset-0 transition-transform duration-150"
-          style={{ transform: isGridMode ? 'translateY(0px)' : `translateY(${viewportOffset}px)` }}
+          style={{
+            transform: isGridMode ? 'translateY(0px)' : `translateY(${viewportOffset}px)`,
+            maskImage: !isGridMode ? 'linear-gradient(to right, transparent 0px, white 144px, white calc(100% - 144px), transparent 100%)' : 'none',
+            WebkitMaskImage: !isGridMode ? 'linear-gradient(to right, transparent 0px, white 144px, white calc(100% - 144px), transparent 100%)' : 'none',
+          }}
         >
           {sortedIslands.map((island, index) => {
-            const xPos = getIslandPosition(island);
             const isDeparting = isDepartingSoon(island);
             const isArriving = isArrivingSoon(island);
             const islandSize = getIslandSize(island.transitDays);
-            
-            // Calculate opacity for fade in/out through cloud portals
-            let opacity = 1;
-            if (!isGridMode) {
-              if (xPos < 0) {
-                // Entering from left cloud (fade in from -10% to 0%)
-                opacity = Math.max(0, (xPos + 10) / 10); // 0 at -10%, 1 at 0%
-              } else if (xPos > 100) {
-                // Exiting into right cloud (fade out from 100% to 110%)
-                opacity = Math.max(0, 1 - (xPos - 100) / 10); // 1 at 100%, 0 at 110%
-              }
-            }
-            
-            // Calculate position based on mode
-            let finalXPos, finalYPos, finalScale;
-            
+            const isPopped = poppedIslandId === island.id;
+            const animProps = islandAnimProps[island.id];
+
+            // Outer div: handles position only (CSS anim for stream, inline for grid)
+            let outerStyle;
             if (isGridMode) {
-              // Grid mode - arrange in 6x grid
               const gridPos = getGridPosition(index, sortedIslands.length);
-              finalXPos = gridPos.xPos;
-              finalYPos = gridPos.yPos;
-              finalScale = islandSize;
+              outerStyle = {
+                left: `${gridPos.xPos}%`,
+                top: `${gridPos.yPos}%`,
+                animation: 'none',
+                transition: 'left 1.2s ease-in-out, top 1.2s ease-in-out',
+              };
+            } else if (animProps) {
+              outerStyle = {
+                top: `${island.yOffset}%`,
+                animationName: 'driftAcross',
+                animationDuration: `${animProps.duration}ms`,
+                animationDelay: `-${animProps.cycleMs}ms`,
+                animationTimingFunction: 'linear',
+                animationIterationCount: 'infinite',
+                animationPlayState: animationsEnabled ? 'running' : 'paused',
+              };
             } else {
-              // Stream mode - normal floating position
-              finalXPos = xPos;
-              finalYPos = island.yOffset;
-              finalScale = islandSize;
+              outerStyle = { top: `${island.yOffset}%`, left: '50%' };
             }
-            
+
             return (
               <div
                 key={island.id}
-                className={`absolute cursor-pointer hover:scale-110 ${
-                  animationsEnabled && !isGridMode ? 'animate-float' : ''
-                } ${poppedIslandId === island.id ? 'animate-pulse-pop' : ''}`}
+                className="absolute island-anchor"
                 style={{
-                  left: `${finalXPos}%`,
-                  top: `${finalYPos}%`,
-                  transform: `translate(-50%, -50%) scale(${finalScale * (poppedIslandId === island.id ? UI_CONSTANTS.POP_SCALE : 1)})`,
-                  opacity: opacity,
-                  willChange: 'left, top, transform, filter, box-shadow, opacity',
-                  filter: poppedIslandId === island.id 
-                    ? 'drop-shadow(0 0 40px rgba(255, 215, 0, 1)) drop-shadow(0 0 80px rgba(255, 140, 0, 0.6)) brightness(1.3) contrast(1.2)' 
-                    : 'none',
-                  boxShadow: poppedIslandId === island.id 
-                    ? '0 0 0 4px rgba(255, 215, 0, 0.8), 0 0 0 8px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.4)' 
-                    : 'none',
-                  transition: isGridMode 
-                    ? 'left 1.2s ease-in-out, top 1.2s ease-in-out, transform 1.2s ease-in-out, opacity 1.2s ease-in-out' 
-                    : poppedIslandId === island.id 
-                      ? 'left 1s linear, top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease-in, box-shadow 0.3s ease-in, opacity 0.8s ease-in-out' 
-                      : 'left 1s linear, top 0.3s ease-out, transform 0.5s ease-out, filter 0.3s ease-out, box-shadow 0.3s ease-out, opacity 0.8s ease-in-out',
-                  animationDelay: animationsEnabled && !isGridMode ? `${island.id % 3}s` : '0s',
-                  zIndex: poppedIslandId === island.id ? 9999 : (isGridMode ? 10 : Math.floor(island.yOffset))
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedGame(island);
+                  ...outerStyle,
+                  zIndex: isPopped ? 9999 : (isGridMode ? 10 : Math.floor(island.yOffset)),
                 }}
               >
-                {/* Island shadow */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 bg-black/20 rounded-full blur-md"></div>
-                
-                {/* Status indicator */}
-                {isDeparting && (
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap animate-pulse">
-                    Departing Soon!
-                  </div>
-                )}
-                {isArriving && (
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                    Just Arrived!
-                  </div>
-                )}
-                
-                {/* Island base */}
-                <div className="relative">
-                  <div className="w-48 h-36 bg-gradient-to-b from-emerald-600 to-emerald-800 rounded-t-full transform -skew-x-3 shadow-2xl hover:shadow-3xl transition-shadow">
-                    {/* Game thumbnail on island */}
-                    <div className="absolute inset-4 bg-white rounded-lg overflow-hidden shadow-lg border-4 border-yellow-600">
-                      <img 
-                        src={island.thumbnail} 
-                        alt={island.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    
-                    {/* Island details */}
-                    <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-white/95 rounded-lg px-4 py-2 shadow-lg w-44 text-center border-2 border-yellow-600">
-                      <h3 className="font-bold text-gray-800 text-sm truncate font-body">{island.title}</h3>
-                      <p className="text-xs text-gray-600 font-body">{island.creator}</p>
-                      <p className="text-xs text-sky-600 font-semibold mt-1 font-body">
-                        {island.transitDays} day journey
-                      </p>
+                {/* Scale + effects wrapper — separate element so it doesn't conflict with drift or float */}
+                <div
+                  className={isPopped ? 'animate-pulse-pop' : ''}
+                  style={{
+                    transform: `scale(${islandSize * (isPopped ? UI_CONSTANTS.POP_SCALE : 1)})`,
+                    transition: 'transform 0.5s ease-out, filter 0.3s ease, box-shadow 0.3s ease',
+                    filter: isPopped
+                      ? 'drop-shadow(0 0 40px rgba(255, 215, 0, 1)) drop-shadow(0 0 80px rgba(255, 140, 0, 0.6)) brightness(1.3) contrast(1.2)'
+                      : 'none',
+                    boxShadow: isPopped
+                      ? '0 0 0 4px rgba(255, 215, 0, 0.8), 0 0 0 8px rgba(255, 215, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.4)'
+                      : 'none',
+                    willChange: isPopped ? 'transform, filter, box-shadow' : 'auto',
+                  }}
+                >
+                  {/* Float + click wrapper — float animation only does translateY now, no conflicts */}
+                  <div
+                    className={`island-float cursor-pointer ${animationsEnabled && !isGridMode ? 'animate-float' : ''}`}
+                    style={{ animationDelay: `${(index % 5) * 1.2}s` }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedGame(island);
+                    }}
+                  >
+                    {/* Island shadow */}
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 bg-black/20 rounded-full blur-md"></div>
+
+                    {/* Status indicator */}
+                    {isDeparting && (
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap animate-pulse">
+                        Departing Soon!
+                      </div>
+                    )}
+                    {isArriving && (
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
+                        Just Arrived!
+                      </div>
+                    )}
+
+                    {/* Island base */}
+                    <div className="relative">
+                      <div className="w-48 h-36 bg-gradient-to-b from-emerald-600 to-emerald-800 rounded-t-full transform -skew-x-3 shadow-2xl transition-shadow">
+                        {/* Game thumbnail on island */}
+                        <div className="absolute inset-4 bg-white rounded-lg overflow-hidden shadow-lg border-4 border-yellow-600">
+                          <img
+                            src={island.thumbnail}
+                            alt={island.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        {/* Island details */}
+                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-white/95 rounded-lg px-4 py-2 shadow-lg w-44 text-center border-2 border-yellow-600">
+                          <h3 className="font-bold text-gray-800 text-sm truncate font-body">{island.title}</h3>
+                          <p className="text-xs text-gray-600 font-body">{island.creator}</p>
+                          <p className="text-xs text-sky-600 font-semibold mt-1 font-body">
+                            {island.transitDays} day journey
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1229,152 +1285,6 @@ const FloatingIslandsGames = () => {
           </div>
         )}
       </div>
-
-      {/* Sidebar - Right Side with Tabs - CLOSER TO TOP BAR */}
-      {showSidebar && (
-        <div 
-          className="fixed top-[140px] right-6 w-80 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border-2 border-sky-200 z-50 max-h-[calc(100vh-240px)] overflow-hidden flex flex-col"
-        >
-          {/* Tabs */}
-          <div className="flex border-b border-sky-200">
-            <button
-              onClick={() => setSidebarView('upcoming')}
-              className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors ${
-                sidebarView === 'upcoming'
-                  ? 'bg-gradient-to-r from-sky-50 to-purple-50 text-sky-700 border-b-2 border-sky-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Upcoming
-            </button>
-            <button
-              onClick={() => setSidebarView('archive')}
-              className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors ${
-                sidebarView === 'archive'
-                  ? 'bg-gradient-to-r from-sky-50 to-purple-50 text-sky-700 border-b-2 border-sky-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Archive
-            </button>
-          </div>
-          
-          {/* Upcoming Tab Content */}
-          {sidebarView === 'upcoming' && (
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              <div>
-                <p className="text-xs text-gray-600 mb-2 font-semibold">Arriving Soon</p>
-                {upcomingArrivals.length === 0 ? (
-                  <p className="text-gray-500 text-sm text-center py-4">No islands arriving soon</p>
-                ) : (
-                  <div className="space-y-2">
-                    {upcomingArrivals.map((island) => {
-                      const timeUntilVisible = island.transitTime * (0.1 - island.progress);
-                      const hoursRemaining = Math.floor(timeUntilVisible / (1000 * 60 * 60));
-                      
-                      return (
-                        <div
-                          key={island.id}
-                          className="bg-white rounded-lg p-2 shadow-sm border border-sky-100 hover:border-sky-300 transition-colors cursor-pointer"
-                          onClick={() => {
-                            zoomToIsland(island);
-                            setSelectedGame(island);
-                          }}
-                        >
-                          <div className="flex gap-2 items-center">
-                            <img
-                              src={island.thumbnail}
-                              alt={island.title}
-                              className="w-12 h-12 object-cover rounded border-2 border-yellow-500"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-gray-800 text-xs truncate">{island.title}</h4>
-                              <p className="text-xs text-green-600 font-semibold">
-                                ~{hoursRemaining}h away
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {departingSoon.length > 0 && (
-                <div className="pt-3 mt-3 border-t border-sky-200">
-                  <p className="text-xs text-gray-600 mb-2 font-semibold">⚠️ Departing Soon</p>
-                  <div className="space-y-2">
-                    {departingSoon.map((island) => {
-                      const timeUntilGone = island.transitTime * (1 - island.progress);
-                      const hoursRemaining = Math.floor(timeUntilGone / (1000 * 60 * 60));
-                      
-                      return (
-                        <div
-                          key={island.id}
-                          className="bg-red-50 rounded-lg p-2 shadow-sm border border-red-200 hover:border-red-400 transition-colors cursor-pointer"
-                          onClick={() => {
-                            zoomToIsland(island);
-                            setSelectedGame(island);
-                          }}
-                        >
-                          <div className="flex gap-2 items-center">
-                            <img
-                              src={island.thumbnail}
-                              alt={island.title}
-                              className="w-12 h-12 object-cover rounded border-2 border-red-500"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-gray-800 text-xs truncate">{island.title}</h4>
-                              <p className="text-xs text-red-600 font-semibold">
-                                Gone in ~{hoursRemaining}h
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Archive Tab Content */}
-          {sidebarView === 'archive' && (
-            <div className="flex-1 overflow-y-auto p-4">
-              <p className="text-xs text-gray-600 mb-3">Previously featured games</p>
-              <div className="space-y-2">
-                {archivedIslands.slice(0, 10).map((island) => (
-                  <div
-                    key={island.id}
-                    className="bg-gray-50 rounded-lg p-2 shadow-sm border border-gray-200 hover:border-gray-400 transition-colors cursor-pointer"
-                    onClick={() => setSelectedGame(island)}
-                  >
-                    <div className="flex gap-2 items-center">
-                      <img
-                        src={island.thumbnail}
-                        alt={island.title}
-                        className="w-12 h-12 object-cover rounded border-2 border-gray-400"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-800 text-xs truncate">{island.title}</h4>
-                        <p className="text-xs text-gray-500 truncate">{island.creator}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {archivedIslands.length > 10 && (
-                <button className="w-full mt-4 bg-sky-600 hover:bg-sky-700 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors">
-                  View Full Archive Page →
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Game Detail Modal */}
       {selectedGame && (
@@ -1555,9 +1465,9 @@ const FloatingIslandsGames = () => {
                   <p className="text-xs text-gray-600 mb-2 font-semibold">⚠️ Departing Soon</p>
                   <div className="space-y-2">
                     {departingSoon.map((island) => {
-                      const timeUntilGone = island.transitTime * (1 - island.progress);
+                      const timeUntilGone = island.adjustedTransitTime * (1 - island.progress);
                       const hoursRemaining = Math.floor(timeUntilGone / (1000 * 60 * 60));
-                      
+
                       return (
                         <div
                           key={island.id}
@@ -1680,13 +1590,6 @@ const FloatingIslandsGames = () => {
           </div>
         </div>
       </div>
-
-      {/* SIMPLE TEST - This should show when sidebar is open */}
-      {showSidebar && false && (
-        <div className="fixed top-20 left-20 w-96 h-96 bg-red-500 border-8 border-yellow-400 flex items-center justify-center" style={{ zIndex: 99999 }}>
-          <h1 className="text-white text-4xl font-bold">TEST SIDEBAR</h1>
-        </div>
-      )}
 
       {/* Archive Page - Full Screen */}
       {showArchive && (
