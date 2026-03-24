@@ -1085,44 +1085,60 @@ const FloatingIslandsGames = () => {
         {/* Cloud Portals - Entry (Left) and Exit (Right) */}
         {!isGridMode && (
           <>
-            {/* Left Cloud Column (Entry Portal) */}
-            <div className="absolute left-0 top-0 bottom-24 w-36 pointer-events-none z-30 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-200/50 via-white/20 to-transparent" />
+            {/* Left Cloud Column (Entry Portal) - wall of clouds */}
+            <div className="absolute left-0 top-0 bottom-0 w-48 pointer-events-none z-30 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-sky-100/70 via-sky-50/30 to-transparent" />
               {[
-                { top: '3%',  left: -12, w: 130, h: 70, op: 0.90 },
-                { top: '16%', left:   5, w: 110, h: 58, op: 0.85 },
-                { top: '29%', left:  -8, w: 145, h: 76, op: 0.92 },
-                { top: '43%', left:   2, w: 125, h: 64, op: 0.88 },
-                { top: '57%', left: -15, w: 140, h: 72, op: 0.90 },
-                { top: '71%', left:   8, w: 115, h: 60, op: 0.82 },
-                { top: '84%', left:  -5, w: 132, h: 68, op: 0.87 },
+                { top: '-6%',  left: -22, w: 200, h: 100, op: 0.93 },
+                { top:  '3%',  left:  12, w: 170, h:  85, op: 0.86 },
+                { top: '10%',  left: -18, w: 210, h: 105, op: 0.94 },
+                { top: '18%',  left:   4, w: 180, h:  90, op: 0.88 },
+                { top: '26%',  left: -26, w: 205, h: 102, op: 0.91 },
+                { top: '34%',  left:   8, w: 175, h:  88, op: 0.85 },
+                { top: '42%',  left: -14, w: 215, h: 108, op: 0.93 },
+                { top: '50%',  left:  -4, w: 185, h:  93, op: 0.89 },
+                { top: '58%',  left: -20, w: 200, h: 100, op: 0.91 },
+                { top: '66%',  left:  10, w: 170, h:  85, op: 0.86 },
+                { top: '74%',  left: -16, w: 210, h: 105, op: 0.92 },
+                { top: '82%',  left:   2, w: 180, h:  90, op: 0.87 },
+                { top: '90%',  left: -24, w: 205, h: 102, op: 0.90 },
+                { top: '98%',  left:   6, w: 175, h:  88, op: 0.85 },
               ].map((c, i) => (
                 <div key={i} style={{ position: 'absolute', top: c.top, left: c.left, width: c.w, height: c.h }}>
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '44%', background: `rgba(255,255,255,${c.op})`, borderRadius: 10, filter: 'blur(3px)' }} />
-                  <div style={{ position: 'absolute', bottom: '27%', left: '8%',  width: '38%', height: '68%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
-                  <div style={{ position: 'absolute', bottom: '32%', left: '32%', width: '44%', height: '80%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
-                  <div style={{ position: 'absolute', bottom: '20%', right: '6%', width: '33%', height: '58%', background: `rgba(255,255,255,${c.op * 0.9})`, borderRadius: '50%', filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '42%', background: `rgba(255,255,255,${c.op})`, borderRadius: 12, filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '25%', left: '5%',  width: '36%', height: '70%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '30%', left: '28%', width: '46%', height: '84%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '18%', right: '4%', width: '35%', height: '62%', background: `rgba(255,255,255,${c.op * 0.9})`, borderRadius: '50%', filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '35%', left: '55%', width: '28%', height: '52%', background: `rgba(255,255,255,${c.op * 0.85})`, borderRadius: '50%', filter: 'blur(5px)' }} />
                 </div>
               ))}
             </div>
             
-            {/* Right Cloud Column (Exit Portal) */}
-            <div className="absolute right-0 top-0 bottom-24 w-36 pointer-events-none z-30 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-l from-sky-200/50 via-white/20 to-transparent" />
+            {/* Right Cloud Column (Exit Portal) - wall of clouds */}
+            <div className="absolute right-0 top-0 bottom-0 w-48 pointer-events-none z-30 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-l from-sky-100/70 via-sky-50/30 to-transparent" />
               {[
-                { top: '8%',  right: -10, w: 128, h: 68, op: 0.88 },
-                { top: '21%', right:   5, w: 112, h: 60, op: 0.85 },
-                { top: '35%', right: -12, w: 142, h: 74, op: 0.91 },
-                { top: '49%', right:   0, w: 122, h: 64, op: 0.87 },
-                { top: '63%', right:  -8, w: 136, h: 70, op: 0.90 },
-                { top: '77%', right:   7, w: 110, h: 60, op: 0.83 },
-                { top: '90%', right:  -4, w: 130, h: 66, op: 0.88 },
+                { top: '-4%',  right: -20, w: 195, h:  98, op: 0.91 },
+                { top:  '5%',  right:   8, w: 168, h:  84, op: 0.86 },
+                { top: '12%',  right: -16, w: 208, h: 104, op: 0.93 },
+                { top: '20%',  right:   2, w: 178, h:  89, op: 0.88 },
+                { top: '28%',  right: -24, w: 202, h: 101, op: 0.91 },
+                { top: '36%',  right:  10, w: 172, h:  86, op: 0.84 },
+                { top: '44%',  right: -12, w: 212, h: 106, op: 0.93 },
+                { top: '52%',  right:  -2, w: 183, h:  92, op: 0.89 },
+                { top: '60%',  right: -18, w: 198, h:  99, op: 0.91 },
+                { top: '68%',  right:   7, w: 168, h:  84, op: 0.85 },
+                { top: '76%',  right: -14, w: 208, h: 104, op: 0.92 },
+                { top: '84%',  right:   4, w: 178, h:  89, op: 0.87 },
+                { top: '92%',  right: -22, w: 202, h: 101, op: 0.90 },
+                { top: '100%', right:   5, w: 172, h:  86, op: 0.84 },
               ].map((c, i) => (
                 <div key={i} style={{ position: 'absolute', top: c.top, right: c.right, width: c.w, height: c.h }}>
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '44%', background: `rgba(255,255,255,${c.op})`, borderRadius: 10, filter: 'blur(3px)' }} />
-                  <div style={{ position: 'absolute', bottom: '27%', left: '8%',  width: '38%', height: '68%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
-                  <div style={{ position: 'absolute', bottom: '32%', left: '32%', width: '44%', height: '80%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(3px)' }} />
-                  <div style={{ position: 'absolute', bottom: '20%', right: '6%', width: '33%', height: '58%', background: `rgba(255,255,255,${c.op * 0.9})`, borderRadius: '50%', filter: 'blur(3px)' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '42%', background: `rgba(255,255,255,${c.op})`, borderRadius: 12, filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '25%', left: '5%',  width: '36%', height: '70%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '30%', left: '28%', width: '46%', height: '84%', background: `rgba(255,255,255,${c.op})`,        borderRadius: '50%', filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '18%', right: '4%', width: '35%', height: '62%', background: `rgba(255,255,255,${c.op * 0.9})`, borderRadius: '50%', filter: 'blur(4px)' }} />
+                  <div style={{ position: 'absolute', bottom: '35%', left: '55%', width: '28%', height: '52%', background: `rgba(255,255,255,${c.op * 0.85})`, borderRadius: '50%', filter: 'blur(5px)' }} />
                 </div>
               ))}
             </div>
@@ -1134,8 +1150,14 @@ const FloatingIslandsGames = () => {
           className="absolute inset-0 transition-transform duration-150"
           style={{
             transform: isGridMode ? 'translateY(0px)' : `translateY(${viewportOffset}px)`,
-            maskImage: !isGridMode ? 'linear-gradient(to right, transparent 0px, white 144px, white calc(100% - 144px), transparent 100%)' : 'none',
-            WebkitMaskImage: !isGridMode ? 'linear-gradient(to right, transparent 0px, white 144px, white calc(100% - 144px), transparent 100%)' : 'none',
+            maskImage: !isGridMode
+              ? 'linear-gradient(to bottom, transparent 0%, white 70px, white calc(100% - 70px), transparent 100%), linear-gradient(to right, transparent 0px, white 192px, white calc(100% - 192px), transparent 100%)'
+              : 'none',
+            WebkitMaskImage: !isGridMode
+              ? 'linear-gradient(to bottom, transparent 0%, white 70px, white calc(100% - 70px), transparent 100%), linear-gradient(to right, transparent 0px, white 192px, white calc(100% - 192px), transparent 100%)'
+              : 'none',
+            maskComposite: 'intersect',
+            WebkitMaskComposite: 'destination-in',
           }}
         >
           {sortedIslands.map((island, index) => {
