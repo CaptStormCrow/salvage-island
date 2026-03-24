@@ -411,15 +411,15 @@ const SAMPLE_GAMES = [
 // ISLAND VISUAL THEMES (mapped to game genre)
 // ============================================================================
 const ISLAND_THEMES = {
-  forest:   { gradFrom: '#15803d', gradTo: '#14532d', border: '#ca8a04', glow: 'rgba(34,197,94,0.35)'   },
-  dark:     { gradFrom: '#334155', gradTo: '#0f172a', border: '#ef4444', glow: 'rgba(239,68,68,0.35)'   },
-  mystic:   { gradFrom: '#7c3aed', gradTo: '#4c1d95', border: '#a78bfa', glow: 'rgba(167,139,250,0.35)' },
-  cosmic:   { gradFrom: '#1d4ed8', gradTo: '#1e3a8a', border: '#38bdf8', glow: 'rgba(56,189,248,0.35)'  },
-  desert:   { gradFrom: '#b45309', gradTo: '#78350f', border: '#fb923c', glow: 'rgba(251,146,60,0.35)'  },
-  musical:  { gradFrom: '#be185d', gradTo: '#831843', border: '#f9a8d4', glow: 'rgba(249,168,212,0.35)' },
-  crystal:  { gradFrom: '#0f766e', gradTo: '#134e4a', border: '#5eead4', glow: 'rgba(94,234,212,0.35)'  },
-  meadow:   { gradFrom: '#4d7c0f', gradTo: '#365314', border: '#a3e635', glow: 'rgba(163,230,53,0.35)'  },
-  volcanic: { gradFrom: '#b91c1c', gradTo: '#7f1d1d', border: '#f97316', glow: 'rgba(249,115,22,0.35)'  },
+  forest:   { gradFrom: '#15803d', gradTo: '#14532d', border: '#ca8a04', glow: 'rgba(34,197,94,0.35)',   shape: '50% 50% 0% 0% / 55% 55% 0% 0%',          skew: 'skewX(-3deg)'             },
+  dark:     { gradFrom: '#334155', gradTo: '#0f172a', border: '#ef4444', glow: 'rgba(239,68,68,0.35)',   shape: '8% 8% 0% 0%',                             skew: 'skewX(2deg)'              },
+  mystic:   { gradFrom: '#7c3aed', gradTo: '#4c1d95', border: '#a78bfa', glow: 'rgba(167,139,250,0.35)', shape: '55% 45% 0% 0% / 65% 50% 0% 0%',          skew: ''                         },
+  cosmic:   { gradFrom: '#1d4ed8', gradTo: '#1e3a8a', border: '#38bdf8', glow: 'rgba(56,189,248,0.35)',  shape: '0%',                                      skew: 'skewX(-6deg) skewY(-1deg)'},
+  desert:   { gradFrom: '#b45309', gradTo: '#78350f', border: '#fb923c', glow: 'rgba(251,146,60,0.35)',  shape: '4% 4% 0% 0%',                             skew: ''                         },
+  musical:  { gradFrom: '#be185d', gradTo: '#831843', border: '#f9a8d4', glow: 'rgba(249,168,212,0.35)', shape: '45% 55% 0% 0% / 60% 60% 0% 0%',          skew: 'skewX(3deg)'              },
+  crystal:  { gradFrom: '#0f766e', gradTo: '#134e4a', border: '#5eead4', glow: 'rgba(94,234,212,0.35)',  shape: '30% 70% 0% 0% / 45% 65% 0% 0%',          skew: 'skewX(-5deg)'             },
+  meadow:   { gradFrom: '#4d7c0f', gradTo: '#365314', border: '#a3e635', glow: 'rgba(163,230,53,0.35)',  shape: '65% 35% 0% 0% / 75% 45% 0% 0%',          skew: 'skewX(4deg)'              },
+  volcanic: { gradFrom: '#b91c1c', gradTo: '#7f1d1d', border: '#f97316', glow: 'rgba(249,115,22,0.35)',  shape: '25% 25% 0% 0% / 35% 35% 0% 0%',          skew: ''                         },
 };
 
 const getIslandTheme = (tags = []) => {
@@ -433,6 +433,21 @@ const getIslandTheme = (tags = []) => {
   if (/farm|cozy|cottage|cooking|pets|simulation|casual|management|time travel/.test(t)) return 'meadow';
   if (/action|shooter|battle|fight|ninja|pirate|multiplayer/.test(t)) return 'volcanic';
   return 'forest';
+};
+
+const getThemeIcon = (themeName) => {
+  switch (themeName) {
+    case 'forest':   return <><circle cx="10" cy="14" r="2" fill="#a3e635"/><polygon points="10,2 4,10 7,10 7,14 13,14 13,10 16,10" fill="#4ade80"/></>;
+    case 'dark':     return <><rect x="4" y="10" width="12" height="8" fill="#475569" rx="1"/><polygon points="4,10 10,2 16,10" fill="#64748b"/><circle cx="7" cy="13" r="1" fill="#ef4444"/><circle cx="13" cy="13" r="1" fill="#ef4444"/></>;
+    case 'mystic':   return <><polygon points="10,1 12,7 18,7 13,11 15,17 10,13 5,17 7,11 2,7 8,7" fill="#a78bfa"/></>;
+    case 'cosmic':   return <><circle cx="10" cy="10" r="4" fill="#38bdf8"/><ellipse cx="10" cy="10" rx="9" ry="3" fill="none" stroke="#7dd3fc" strokeWidth="1.5"/></>;
+    case 'desert':   return <><circle cx="10" cy="7" r="5" fill="#fbbf24"/><line x1="10" y1="1" x2="10" y2="0" stroke="#fbbf24" strokeWidth="1.5"/><line x1="16" y1="4" x2="17" y2="3" stroke="#fbbf24" strokeWidth="1.5"/><line x1="19" y1="10" x2="20" y2="10" stroke="#fbbf24" strokeWidth="1.5"/><line x1="4" y1="4" x2="3" y2="3" stroke="#fbbf24" strokeWidth="1.5"/><line x1="1" y1="10" x2="0" y2="10" stroke="#fbbf24" strokeWidth="1.5"/></>;
+    case 'musical':  return <><circle cx="7" cy="15" r="3" fill="#f9a8d4"/><circle cx="14" cy="13" r="3" fill="#f9a8d4"/><path d="M10,12 L10,4 L17,2 L17,10" stroke="#ec4899" strokeWidth="1.5" fill="none"/></>;
+    case 'crystal':  return <><polygon points="10,1 14,7 18,9 14,11 10,19 6,11 2,9 6,7" fill="#5eead4"/><polygon points="10,5 12,8 10,15 8,8" fill="#99f6e4" opacity="0.6"/></>;
+    case 'meadow':   return <><circle cx="10" cy="10" r="4" fill="#86efac"/><circle cx="6" cy="12" r="3" fill="#4ade80"/><circle cx="14" cy="12" r="3" fill="#4ade80"/><circle cx="10" cy="14" r="3" fill="#22c55e"/><circle cx="10" cy="8" r="2" fill="#fde047"/></>;
+    case 'volcanic': return <><polygon points="10,1 14,9 18,18 2,18 6,9" fill="#ef4444"/><polygon points="10,5 12,11 8,11" fill="#fbbf24"/><path d="M6,18 Q8,13 10,11 Q12,13 14,18" fill="#f97316"/></>;
+    default:         return <><circle cx="10" cy="14" r="2" fill="#a3e635"/><polygon points="10,2 4,10 7,10 7,14 13,14 13,10 16,10" fill="#4ade80"/></>;
+  }
 };
 
 const FloatingIslandsGames = () => {
@@ -1320,12 +1335,23 @@ const FloatingIslandsGames = () => {
                     {/* Island base */}
                     <div className="relative">
                       {(() => {
-                        const theme = ISLAND_THEMES[getIslandTheme(island.tags)];
+                        const themeName = getIslandTheme(island.tags);
+                        const theme = ISLAND_THEMES[themeName];
                         return (
                           <div
-                            className="w-48 h-36 rounded-t-full transform -skew-x-3 shadow-2xl transition-shadow"
-                            style={{ background: `linear-gradient(to bottom, ${theme.gradFrom}, ${theme.gradTo})` }}
+                            className="w-48 h-36 shadow-2xl transition-shadow"
+                            style={{
+                              background: `linear-gradient(to bottom, ${theme.gradFrom}, ${theme.gradTo})`,
+                              borderRadius: theme.shape,
+                              transform: theme.skew,
+                            }}
                           >
+                            {/* Genre icon at peak */}
+                            <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-10 drop-shadow-lg">
+                              <svg viewBox="0 0 20 20" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                                {getThemeIcon(themeName)}
+                              </svg>
+                            </div>
                             {/* Game thumbnail on island */}
                             <div
                               className="absolute inset-4 bg-white rounded-lg overflow-hidden shadow-lg border-4"
