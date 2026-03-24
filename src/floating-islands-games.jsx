@@ -128,6 +128,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?game,pirate",
     description: "Navigate treacherous pixel seas in this retro adventure",
     tags: ["Action", "Retro"],
+    techStack: ["Unity", "C#", "GIMP"],
     transitDays: 2,
     gameUrl: "https://itch.io"
   },
@@ -137,6 +138,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?garden,nature",
     description: "Grow impossible plants in a quantum greenhouse",
     tags: ["Puzzle", "Relaxing"],
+    techStack: ["Godot 4", "GDScript", "Blender"],
     transitDays: 5,
     gameUrl: "https://itch.io"
   },
@@ -146,6 +148,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?neon,city",
     description: "Parkour through a cyberpunk cityscape",
     tags: ["Platformer", "Cyberpunk"],
+    techStack: ["Unreal 5", "C++", "Blueprints"],
     transitDays: 1,
     gameUrl: "https://itch.io"
   },
@@ -155,6 +158,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?coffee,space",
     description: "Serve coffee to aliens in deep space",
     tags: ["Simulation", "Casual"],
+    techStack: ["Unity", "C#", "Photoshop"],
     transitDays: 3,
     gameUrl: "https://itch.io"
   },
@@ -164,6 +168,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?music,sound",
     description: "Solve puzzles using sound wave mechanics",
     tags: ["Puzzle", "Music"],
+    techStack: ["Unity", "C#", "FMOD"],
     transitDays: 4,
     gameUrl: "https://itch.io"
   },
@@ -173,6 +178,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?shadow,ninja",
     description: "Outsmart enemies in a world of shadows",
     tags: ["Stealth", "Strategy"],
+    techStack: ["Unity", "C#", "Substance Painter"],
     transitDays: 6,
     gameUrl: "https://itch.io"
   },
@@ -182,6 +188,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?fire,forge",
     description: "Craft magical weapons in a mystical forge",
     tags: ["Crafting", "Fantasy"],
+    techStack: ["Godot 4", "GDScript", "Aseprite"],
     transitDays: 2,
     gameUrl: "https://itch.io"
   },
@@ -191,6 +198,7 @@ const SAMPLE_GAMES = [
     thumbnail: "https://source.unsplash.com/random/200x150/?diner,retro",
     description: "Run a diner stuck in a time loop",
     tags: ["Time Travel", "Management"],
+    techStack: ["GameMaker Studio 2", "GML", "Aseprite"],
     transitDays: 7,
     gameUrl: "https://itch.io"
   },
@@ -395,6 +403,34 @@ const SAMPLE_GAMES = [
   }
 ];
 
+// ============================================================================
+// ISLAND VISUAL THEMES (mapped to game genre)
+// ============================================================================
+const ISLAND_THEMES = {
+  forest:   { gradFrom: '#15803d', gradTo: '#14532d', border: '#ca8a04', glow: 'rgba(34,197,94,0.35)'   },
+  dark:     { gradFrom: '#334155', gradTo: '#0f172a', border: '#ef4444', glow: 'rgba(239,68,68,0.35)'   },
+  mystic:   { gradFrom: '#7c3aed', gradTo: '#4c1d95', border: '#a78bfa', glow: 'rgba(167,139,250,0.35)' },
+  cosmic:   { gradFrom: '#1d4ed8', gradTo: '#1e3a8a', border: '#38bdf8', glow: 'rgba(56,189,248,0.35)'  },
+  desert:   { gradFrom: '#b45309', gradTo: '#78350f', border: '#fb923c', glow: 'rgba(251,146,60,0.35)'  },
+  musical:  { gradFrom: '#be185d', gradTo: '#831843', border: '#f9a8d4', glow: 'rgba(249,168,212,0.35)' },
+  crystal:  { gradFrom: '#0f766e', gradTo: '#134e4a', border: '#5eead4', glow: 'rgba(94,234,212,0.35)'  },
+  meadow:   { gradFrom: '#4d7c0f', gradTo: '#365314', border: '#a3e635', glow: 'rgba(163,230,53,0.35)'  },
+  volcanic: { gradFrom: '#b91c1c', gradTo: '#7f1d1d', border: '#f97316', glow: 'rgba(249,115,22,0.35)'  },
+};
+
+const getIslandTheme = (tags = []) => {
+  const t = tags.join(' ').toLowerCase();
+  if (/horror|survival|zombie|stealth|shadow|haunted/.test(t))        return 'dark';
+  if (/fantasy|magic|rpg|wizard|spell|dragon|dungeon/.test(t))        return 'mystic';
+  if (/space|galaxy|cosmic|cyber|neon|sci|hacker|mech|robot/.test(t)) return 'cosmic';
+  if (/racing|sports|stadium|athletic/.test(t))                        return 'desert';
+  if (/music|rhythm|sound/.test(t))                                    return 'musical';
+  if (/puzzle|strategy|card|brain|portal/.test(t))                     return 'crystal';
+  if (/farm|cozy|cottage|cooking|pets|simulation|casual|management|time travel/.test(t)) return 'meadow';
+  if (/action|shooter|battle|fight|ninja|pirate|multiplayer/.test(t)) return 'volcanic';
+  return 'forest';
+};
+
 const FloatingIslandsGames = () => {
   const [islands, setIslands] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
@@ -432,6 +468,7 @@ const FloatingIslandsGames = () => {
   // Archive Page & Submission Form
   const [showArchive, setShowArchive] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [showRecruiterView, setShowRecruiterView] = useState(false);
   
   // Back to Top button visibility
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -819,6 +856,12 @@ const FloatingIslandsGames = () => {
           animation: float 6s ease-in-out infinite;
         }
 
+        /* Background cloud drift - slow ambient movement for depth */
+        @keyframes driftBgCloud {
+          from { left: -22%; }
+          to { left: 122%; }
+        }
+
         /* CSS drift animation for island movement - buttery smooth, no JS updates needed */
         @keyframes driftAcross {
           from { left: -10%; }
@@ -876,11 +919,34 @@ const FloatingIslandsGames = () => {
       `}</style>
       
     <div className="relative w-full h-screen bg-gradient-to-b from-sky-300 via-sky-200 to-sky-100 overflow-hidden">
-      {/* Clouds background */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-20 left-10 w-40 h-20 bg-white rounded-full blur-xl"></div>
-        <div className="absolute top-40 right-20 w-60 h-24 bg-white rounded-full blur-xl"></div>
-        <div className="absolute bottom-40 left-1/3 w-48 h-20 bg-white rounded-full blur-xl"></div>
+      {/* Background clouds - slowly drifting for ambient depth */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[
+          { top: '7%',  w: 200, h: 88,  dur: 150, delay:  22, op: 0.28 },
+          { top: '20%', w: 260, h: 100, dur: 200, delay:  68, op: 0.22 },
+          { top: '34%', w: 170, h: 72,  dur: 130, delay:   9, op: 0.25 },
+          { top: '48%', w: 230, h: 92,  dur: 180, delay:  95, op: 0.20 },
+          { top: '62%', w: 190, h: 80,  dur: 160, delay:  40, op: 0.24 },
+          { top: '76%', w: 215, h: 86,  dur: 140, delay:  55, op: 0.21 },
+          { top: '13%', w: 150, h: 64,  dur: 110, delay:  80, op: 0.18 },
+          { top: '88%', w: 240, h: 96,  dur: 190, delay:  30, op: 0.20 },
+        ].map((c, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full blur-2xl bg-white"
+            style={{
+              top: c.top,
+              width: c.w,
+              height: c.h,
+              opacity: c.op,
+              animationName: 'driftBgCloud',
+              animationDuration: `${c.dur}s`,
+              animationDelay: `-${c.delay}s`,
+              animationTimingFunction: 'linear',
+              animationIterationCount: 'infinite',
+            }}
+          />
+        ))}
       </div>
 
       {/* Top Bar */}
@@ -899,7 +965,15 @@ const FloatingIslandsGames = () => {
               >
                 Archive
               </button>
-              
+
+              {/* Recruiter View Button */}
+              <button
+                onClick={() => setShowRecruiterView(true)}
+                className="text-white px-3 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 transition-all font-semibold text-sm btn-press shadow-lg font-body"
+              >
+                For Recruiters
+              </button>
+
               {/* Submit Game Button - Golden CTA */}
               <button
                 onClick={() => setShowSubmissionForm(true)}
@@ -1241,25 +1315,39 @@ const FloatingIslandsGames = () => {
 
                     {/* Island base */}
                     <div className="relative">
-                      <div className="w-48 h-36 bg-gradient-to-b from-emerald-600 to-emerald-800 rounded-t-full transform -skew-x-3 shadow-2xl transition-shadow">
-                        {/* Game thumbnail on island */}
-                        <div className="absolute inset-4 bg-white rounded-lg overflow-hidden shadow-lg border-4 border-yellow-600">
-                          <img
-                            src={island.thumbnail}
-                            alt={island.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                      {(() => {
+                        const theme = ISLAND_THEMES[getIslandTheme(island.tags)];
+                        return (
+                          <div
+                            className="w-48 h-36 rounded-t-full transform -skew-x-3 shadow-2xl transition-shadow"
+                            style={{ background: `linear-gradient(to bottom, ${theme.gradFrom}, ${theme.gradTo})` }}
+                          >
+                            {/* Game thumbnail on island */}
+                            <div
+                              className="absolute inset-4 bg-white rounded-lg overflow-hidden shadow-lg border-4"
+                              style={{ borderColor: theme.border }}
+                            >
+                              <img
+                                src={island.thumbnail}
+                                alt={island.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
 
-                        {/* Island details */}
-                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-white/95 rounded-lg px-4 py-2 shadow-lg w-44 text-center border-2 border-yellow-600">
-                          <h3 className="font-bold text-gray-800 text-sm truncate font-body">{island.title}</h3>
-                          <p className="text-xs text-gray-600 font-body">{island.creator}</p>
-                          <p className="text-xs text-sky-600 font-semibold mt-1 font-body">
-                            {island.transitDays} day journey
-                          </p>
-                        </div>
-                      </div>
+                            {/* Island details */}
+                            <div
+                              className="absolute -bottom-16 left-1/2 -translate-x-1/2 bg-white/95 rounded-lg px-4 py-2 shadow-lg w-44 text-center border-2"
+                              style={{ borderColor: theme.border }}
+                            >
+                              <h3 className="font-bold text-gray-800 text-sm truncate font-body">{island.title}</h3>
+                              <p className="text-xs text-gray-600 font-body">{island.creator}</p>
+                              <p className="text-xs font-semibold mt-1 font-body" style={{ color: theme.gradFrom }}>
+                                {island.transitDays} day journey
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1613,6 +1701,19 @@ const FloatingIslandsGames = () => {
         </div>
       </div>
 
+      {/* Recruiter View - Full Screen */}
+      {showRecruiterView && (
+        <RecruiterViewComponent
+          games={islands}
+          onClose={() => setShowRecruiterView(false)}
+          onSelectGame={(game) => {
+            setSelectedGame(game);
+          }}
+          selectedGame={selectedGame}
+          onCloseModal={() => setSelectedGame(null)}
+        />
+      )}
+
       {/* Archive Page - Full Screen */}
       {showArchive && (
         <ArchivePageComponent 
@@ -1878,10 +1979,205 @@ const ArchivePageComponent = ({ games, onClose, onSelectGame, selectedGame, onCl
   );
 };
 
+// Recruiter View Component
+const RecruiterViewComponent = ({ games, onClose, onSelectGame, selectedGame, onCloseModal }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const developers = useMemo(() => {
+    const devMap = {};
+    games.forEach(game => {
+      const key = game.creator;
+      if (!devMap[key]) {
+        devMap[key] = { name: key, games: [], techStack: new Set(), tags: new Set() };
+      }
+      devMap[key].games.push(game);
+      if (Array.isArray(game.techStack)) {
+        game.techStack.forEach(t => devMap[key].techStack.add(t));
+      }
+      game.tags.forEach(t => devMap[key].tags.add(t));
+    });
+    return Object.values(devMap)
+      .filter(dev => !searchQuery || dev.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => b.games.length - a.games.length);
+  }, [games, searchQuery]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden" style={{ background: 'linear-gradient(135deg, #0c1445 0%, #1a1050 50%, #0d2137 100%)' }}>
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-white/10 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h1 className="text-2xl font-bold text-white font-display">Developer Showcase</h1>
+            <p className="text-white/40 text-sm">{developers.length} developers · {games.length} games</p>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search developers..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/30 border border-white/20 focus:border-white/50 focus:outline-none text-sm"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Developer cards */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {developers.length === 0 ? (
+          <div className="text-center py-20 text-white/40">No developers found</div>
+        ) : developers.map(dev => {
+          const techList = [...dev.techStack];
+          const genreList = [...dev.tags];
+          const theme = ISLAND_THEMES[getIslandTheme([...dev.tags])];
+
+          return (
+            <div key={dev.name} className="rounded-2xl border border-white/10 overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              {/* LEFT: Developer profile */}
+              <div className="flex-shrink-0 w-56 p-5 border-r border-white/10">
+                {/* Avatar */}
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mb-3 text-white text-xl font-bold shadow-xl"
+                  style={{ background: `linear-gradient(135deg, ${theme.gradFrom}, ${theme.gradTo})`, boxShadow: `0 0 24px ${theme.glow}` }}
+                >
+                  {dev.name.charAt(0).toUpperCase()}
+                </div>
+                <h3 className="font-bold text-white text-base leading-snug">{dev.name}</h3>
+                <p className="text-white/40 text-xs mt-0.5">{dev.games.length} game{dev.games.length !== 1 ? 's' : ''}</p>
+
+                {/* Tech stack */}
+                {techList.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-1.5">Tech Stack</p>
+                    <div className="flex flex-wrap gap-1">
+                      {techList.map(tech => (
+                        <span
+                          key={tech}
+                          className="text-xs px-2 py-0.5 rounded font-medium"
+                          style={{ background: theme.glow, color: theme.border, border: `1px solid ${theme.border}50` }}
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Genres */}
+                <div className="mt-3">
+                  <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-1.5">Genres</p>
+                  <div className="flex flex-wrap gap-1">
+                    {genreList.slice(0, 8).map(tag => (
+                      <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT: Floating mini islands */}
+              <div className="flex-1 p-5 min-w-0">
+                <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-4">Games</p>
+                <div className="flex gap-5 overflow-x-auto pb-3">
+                  {dev.games.map((game, gi) => {
+                    const gTheme = ISLAND_THEMES[getIslandTheme(game.tags)];
+                    return (
+                      <div
+                        key={game.id}
+                        className="flex-shrink-0 w-36 cursor-pointer group"
+                        onClick={() => onSelectGame(game)}
+                      >
+                        {/* Mini floating island */}
+                        <div className="relative animate-float" style={{ animationDelay: `${gi * 0.9}s` }}>
+                          <div
+                            className="w-36 h-28 rounded-t-full transform -skew-x-2 shadow-2xl group-hover:scale-105 transition-transform duration-200"
+                            style={{ background: `linear-gradient(to bottom, ${gTheme.gradFrom}, ${gTheme.gradTo})` }}
+                          >
+                            <div className="absolute inset-2 rounded overflow-hidden" style={{ border: `3px solid ${gTheme.border}` }}>
+                              <img src={game.thumbnail} alt={game.title} className="w-full h-full object-cover" />
+                            </div>
+                          </div>
+                          {/* Shadow */}
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-28 h-3 rounded-full blur-sm" style={{ background: 'rgba(0,0,0,0.4)' }} />
+                        </div>
+                        <div className="mt-4 px-1">
+                          <p className="text-white text-xs font-semibold truncate">{game.title}</p>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {game.tags.slice(0, 2).map(tag => (
+                              <span key={tag} className="text-xs px-1.5 py-0.5 rounded" style={{ background: gTheme.glow, color: gTheme.border }}>
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Game detail modal on top */}
+      {selectedGame && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4" onClick={onCloseModal}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="relative">
+              <button onClick={onCloseModal} className="absolute top-4 right-4 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg z-10">
+                <X size={20} />
+              </button>
+              <img src={selectedGame.thumbnail} alt={selectedGame.title} className="w-full h-52 object-cover rounded-t-xl" />
+              <div className="p-5">
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">{selectedGame.title}</h2>
+                <p className="text-gray-500 text-sm mb-3">by {selectedGame.creator}</p>
+                <p className="text-gray-700 text-sm mb-3">{selectedGame.description}</p>
+                {selectedGame.techStack && selectedGame.techStack.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1.5">Tech Stack</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedGame.techStack.map(t => (
+                        <span key={t} className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 font-medium">{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {selectedGame.tags.map(tag => (
+                    <span key={tag} className="text-xs px-2 py-1 rounded-full bg-sky-100 text-sky-700">{tag}</span>
+                  ))}
+                </div>
+                <a
+                  href={selectedGame.gameUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white font-bold py-3 rounded-lg transition-all text-center"
+                >
+                  Play Game →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Game Submission Form Component (Embedded)
 const GameSubmissionFormComponent = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    title: '', creator: '', thumbnail: '', description: '', tags: [], transitDays: 3, gameUrl: '', email: ''
+    title: '', creator: '', thumbnail: '', description: '', tags: [], techStack: '', transitDays: 3, gameUrl: '', email: ''
   });
   const [newTag, setNewTag] = useState('');
   const [errors, setErrors] = useState({});
@@ -2011,6 +2307,10 @@ const GameSubmissionFormComponent = ({ onClose, onSubmit }) => {
               ))}
             </div>
             {errors.tags && <p className="text-red-500 text-xs mt-1">{errors.tags}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Tech Stack <span className="text-gray-400 font-normal">(optional — comma separated)</span></label>
+            <input type="text" value={formData.techStack} onChange={(e) => setFormData({ ...formData, techStack: e.target.value })} className="w-full px-4 py-2 rounded-lg border-2 border-gray-300 focus:border-sky-500 focus:outline-none" placeholder="e.g. Unity, C#, Blender" />
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">Game URL <span className="text-red-500">*</span></label>
