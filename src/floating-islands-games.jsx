@@ -58,18 +58,22 @@ class MockFirebaseClient {
       const showcaseMultiplier = 3600 * 1000; // 1 hour in milliseconds
       const actualTransitTime = transitTime * showcaseMultiplier;
       
-      // Spread games from 10% to 40% of their journey (all visible on screen)
-      // This ensures users see games immediately when page loads
-      const progressPercent = 0.1 + (index / SAMPLE_GAMES.length) * 0.3; // 0.1 to 0.4 (10% to 40%)
+      // Spread games evenly from 5% to 95% progress so they're distributed
+      // across the full screen width — only a handful visible at any moment
+      const progressPercent = 0.05 + (index / (SAMPLE_GAMES.length - 1)) * 0.9;
       const elapsedTime = progressPercent * actualTransitTime;
       const spawnTime = now - elapsedTime;
-      
+
+      // Golden ratio Y distribution — prevents clustering, natural even spread
+      const goldenRatio = 0.6180339887;
+      const yOffset = 12 + ((index * goldenRatio * 68) % 68);
+
       return {
         ...game,
-        id: now + index, // Generate unique ID based on timestamp + index
-        spawnTime, // Server timestamp when island entered the stream
-        transitTime, // Store BASE days (not multiplied)
-        yOffset: Math.random() * UI_CONSTANTS.YOFFSET_RANGE + UI_CONSTANTS.YOFFSET_MIN // Spread from 5% to 85% (closer to header)
+        id: now + index,
+        spawnTime,
+        transitTime,
+        yOffset,
       };
     });
   }
@@ -144,7 +148,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Neon Runners",
-    creator: "Indie Collective",
+    creator: "DevTeam Alpha",
     thumbnail: "https://source.unsplash.com/random/200x150/?neon,city",
     description: "Parkour through a cyberpunk cityscape",
     tags: ["Platformer", "Cyberpunk"],
@@ -164,7 +168,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Echo Chamber",
-    creator: "Sound Wave Studios",
+    creator: "Studio Beta",
     thumbnail: "https://source.unsplash.com/random/200x150/?music,sound",
     description: "Solve puzzles using sound wave mechanics",
     tags: ["Puzzle", "Music"],
@@ -174,7 +178,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Shadow Tactics",
-    creator: "Stealth Masters",
+    creator: "Athletic Games",
     thumbnail: "https://source.unsplash.com/random/200x150/?shadow,ninja",
     description: "Outsmart enemies in a world of shadows",
     tags: ["Stealth", "Strategy"],
@@ -214,7 +218,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Sky Merchant",
-    creator: "Cloud Nine Games",
+    creator: "Starlight Games",
     thumbnail: "https://source.unsplash.com/random/200x150/?sky,clouds",
     description: "Trade goods between floating islands",
     tags: ["Trading", "Adventure"],
@@ -223,7 +227,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Spell Weaver",
-    creator: "Arcane Arts",
+    creator: "Ember Interactive",
     thumbnail: "https://source.unsplash.com/random/200x150/?magic,fantasy",
     description: "Combine magical elements to cast spells",
     tags: ["Magic", "Puzzle"],
@@ -232,7 +236,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Mech Arena",
-    creator: "Steel Giants",
+    creator: "Combat Zone",
     thumbnail: "https://source.unsplash.com/random/200x150/?robot,tech",
     description: "Battle giant robots in futuristic arenas",
     tags: ["Action", "Multiplayer"],
@@ -250,7 +254,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Rhythm Racer",
-    creator: "Beat Box Studios",
+    creator: "Creative Tools",
     thumbnail: "https://source.unsplash.com/random/200x150/?racing,music",
     description: "Race to the beat in this musical speedrun",
     tags: ["Racing", "Music"],
@@ -259,7 +263,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Haunted Halls",
-    creator: "Spooky Games",
+    creator: "Temporal Games",
     thumbnail: "https://source.unsplash.com/random/200x150/?haunted,mansion",
     description: "Explore a mansion full of ghosts",
     tags: ["Horror", "Adventure"],
@@ -268,7 +272,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Card Commander",
-    creator: "Deck Masters",
+    creator: "Roguelike Studios",
     thumbnail: "https://source.unsplash.com/random/200x150/?cards,game",
     description: "Strategic deck-building card battles",
     tags: ["Card Game", "Strategy"],
@@ -277,7 +281,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Ninja Dash",
-    creator: "Swift Strike",
+    creator: "Athletic Games",
     thumbnail: "https://source.unsplash.com/random/200x150/?ninja,action",
     description: "Lightning-fast ninja action platformer",
     tags: ["Platformer", "Action"],
@@ -286,7 +290,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Farm Frenzy",
-    creator: "Harvest Moon Dev",
+    creator: "Peaceful Play",
     thumbnail: "https://source.unsplash.com/random/200x150/?farm,agriculture",
     description: "Manage your farm from dawn to dusk",
     tags: ["Farming", "Simulation"],
@@ -295,7 +299,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Galaxy Explorer",
-    creator: "Cosmic Studios",
+    creator: "Starlight Games",
     thumbnail: "https://source.unsplash.com/random/200x150/?galaxy,space",
     description: "Discover new worlds across the universe",
     tags: ["Space", "Exploration"],
@@ -304,7 +308,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Puzzle Portal",
-    creator: "Brain Games Inc",
+    creator: "Studio Beta",
     thumbnail: "https://source.unsplash.com/random/200x150/?portal,abstract",
     description: "Mind-bending portal mechanics",
     tags: ["Puzzle", "Physics"],
@@ -313,7 +317,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Dragon Rider",
-    creator: "Fantasy Flight",
+    creator: "Ember Interactive",
     thumbnail: "https://source.unsplash.com/random/200x150/?dragon,fantasy",
     description: "Soar through the skies on dragonback",
     tags: ["Flying", "Adventure"],
@@ -322,7 +326,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Zombie Survival",
-    creator: "Undead Games",
+    creator: "Combat Zone",
     thumbnail: "https://source.unsplash.com/random/200x150/?zombie,apocalypse",
     description: "Survive the zombie apocalypse",
     tags: ["Survival", "Horror"],
@@ -331,7 +335,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Treasure Hunt",
-    creator: "Adventure Squad",
+    creator: "Roguelike Studios",
     thumbnail: "https://source.unsplash.com/random/200x150/?treasure,adventure",
     description: "Search for hidden treasures worldwide",
     tags: ["Adventure", "Exploration"],
@@ -340,7 +344,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Chef Master",
-    creator: "Culinary Creations",
+    creator: "Creative Tools",
     thumbnail: "https://source.unsplash.com/random/200x150/?cooking,chef",
     description: "Cook your way to culinary fame",
     tags: ["Cooking", "Simulation"],
@@ -349,7 +353,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Cyber Hacker",
-    creator: "Digital Dreams",
+    creator: "Combat Zone",
     thumbnail: "https://source.unsplash.com/random/200x150/?cyberpunk,hacker",
     description: "Hack the mainframe in this cyberpunk thriller",
     tags: ["Hacking", "Cyberpunk"],
@@ -358,7 +362,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Pet Paradise",
-    creator: "Cute Games",
+    creator: "Peaceful Play",
     thumbnail: "https://source.unsplash.com/random/200x150/?pets,cute",
     description: "Raise and care for adorable pets",
     tags: ["Pets", "Casual"],
@@ -367,7 +371,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Battle Royale Arena",
-    creator: "Combat Zone",
+    creator: "DevTeam Alpha",
     thumbnail: "https://source.unsplash.com/random/200x150/?battle,arena",
     description: "Last player standing wins",
     tags: ["Battle Royale", "Multiplayer"],
@@ -376,7 +380,7 @@ const SAMPLE_GAMES = [
   },
   {
     title: "Mystery Manor",
-    creator: "Detective Games",
+    creator: "Temporal Games",
     thumbnail: "https://source.unsplash.com/random/200x150/?mystery,detective",
     description: "Solve the murder mystery",
     tags: ["Mystery", "Adventure"],
@@ -492,9 +496,9 @@ const FloatingIslandsGames = () => {
 
   // Calculate island size based on transit days (shorter = larger, longer = smaller)
   const getIslandSize = (transitDays) => {
-    // 1 day = largest (scale 1.4), 7 days = smallest (scale 0.5)
-    const minScale = 0.5;
-    const maxScale = 1.4;
+    // 1 day = largest (scale 1.1), 7 days = smallest (scale 0.72)
+    const minScale = 0.72;
+    const maxScale = 1.1;
     const scale = maxScale - ((transitDays - 1) / 6) * (maxScale - minScale);
     return scale;
   };
